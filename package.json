@@ -1,0 +1,73 @@
+{
+  "name": "a18n",
+  "version": "0.0.1",
+  "description": "Automated I18n solution for JavaScript/TypeScript/React, effortlessly add I18n support for existing projects.",
+  "main": "dist/i18n/index.js",
+  "author": "FallenMax <FallenMax@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "prebuild": "rm -rf dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "tsc --project tsconfig.json",
+    "watch": "tsc --project tsconfig.json --watch",
+    "prepublishOnly": "yarn && npm run build && npm run test"
+  },
+  "keywords": [
+    "i18n",
+    "parse",
+    "wrap",
+    "extract",
+    "codemod",
+    "ast",
+    "localization",
+    "translation",
+    "react",
+    "typescript",
+    "jsx",
+    "tsx"
+  ],
+  "bin": {
+    "a18n": "./bin/index.js"
+  },
+  "jest": {
+    "testURL": "http://localhost/",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": ".*\\.test.(js|jsx|ts|tsx)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ],
+    "testEnvironment": "node"
+  },
+  "engines": {
+    "node": ">=8.1"
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.0.8",
+    "@types/jest": "^25.1.2",
+    "@types/mkdirp": "^1.0.0",
+    "@types/node": "^13.7.0",
+    "@types/react": "^16.9.19",
+    "@types/yargs-parser": "^15.0.0",
+    "jest": "^25.1.0",
+    "ts-jest": "^25.2.0",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.8.4",
+    "@babel/traverse": "^7.8.4",
+    "@babel/types": "^7.3.0",
+    "fast-glob": "^3.1.1",
+    "mkdirp": "^1.0.3",
+    "recast": "0.18.5",
+    "yargs-parser": "^17.0.0"
+  }
+}

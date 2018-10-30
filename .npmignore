@@ -1,0 +1,8 @@
+*
+
+!/dist/**/*.*
+/dist/test
+/dist/**/*.test.*
+/dist/**/__test__/*.*
+
+!/bin/**/*.*
