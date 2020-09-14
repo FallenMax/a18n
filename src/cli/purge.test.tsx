@@ -5,7 +5,7 @@ import { purgers } from './purge'
 describe('purge', () => {
   test('remove a18n() calls and imports ', () => {
     const source = readFileSync(
-      resolve(__dirname, '../../src/cli/__test__/wrap-output.mock.tsx'),
+      resolve(__dirname, '../../src/cli/__test__/purge-input.mock.tsx'),
       { encoding: 'utf-8' },
     )
     const expected = readFileSync(

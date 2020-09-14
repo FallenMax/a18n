@@ -6,7 +6,6 @@ import * as recast from 'recast'
 import {
   LIB_FACTORY_IDENTIFIER,
   LIB_IDENTIFIER,
-  LIB_IGNORE_FILE,
   LIB_MODULE,
 } from '../constants'
 
@@ -23,10 +22,6 @@ const fromStringLiteral = (
 export const tsxPurger = ({ ext }: { ext: string }) => (
   code: string,
 ): string => {
-  if (code.includes(LIB_IGNORE_FILE)) {
-    return code
-  }
-
   const parse = (source: string) =>
     parser.parse(source, {
       tokens: true,
@@ -59,12 +54,6 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
 
       try {
         switch (node.type) {
-          case 'JSXExpressionContainer': {
-            if (t.isStringLiteral(node.expression)) {
-            }
-
-            break
-          }
           // a18n('中文') => '中文'
           case 'StringLiteral':
             {
@@ -121,7 +110,16 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
           }
 
           case 'CallExpression': {
-            if (t.isIdentifier(node.callee)) {
+            // remove s18n.xxxx()
+            if (
+              t.isMemberExpression(node.callee) &&
+              t.isIdentifier(node.callee.object) &&
+              node.callee.object.name === LIB_IDENTIFIER
+            ) {
+              path.remove()
+            }
+            // remove require("s18n")
+            else if (t.isIdentifier(node.callee)) {
               const isRequireLibModule =
                 node.callee.name === 'require' &&
                 fromStringLiteral(node.arguments[0]) === LIB_MODULE
@@ -143,8 +141,8 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
             break
         }
       } catch (error) {
-        console.log('parents:', [path.parent.type, path.parentPath.type])
-        console.log('loc:', path.node.loc && path.node.loc.start)
+        console.info('parents:', [path.parent.type, path.parentPath.type])
+        console.info('loc:', path.node.loc && path.node.loc.start)
         throw error
       }
     },
