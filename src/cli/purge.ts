@@ -53,7 +53,9 @@ export const purge = (
   const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
 
   if (!params.write) {
-    console.info(`没有提供 '--write' 参数，当前为预览模式，以下文件将被修改:`)
+    console.info(
+      `Dry run mode, files below will be modified (use --write to actually write files): `,
+    )
     console.info(`---`)
   }
 
@@ -69,7 +71,7 @@ export const purge = (
   })
 
   if (errorFiles.length) {
-    console.info('下面这些文件转换失败了:')
+    console.info('There are errors when processing files below:')
     console.info('---')
     errorFiles.forEach((file) => console.info(file))
   }

@@ -133,7 +133,7 @@ export const extract = (
   })
 
   if (errorFiles.length) {
-    console.info('下面这些文件提取失败了:')
+    console.info('There are errors when processing files below:')
     console.info('---')
     errorFiles.forEach((file) => console.info(file))
   }
