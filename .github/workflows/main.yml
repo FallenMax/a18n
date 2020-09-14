@@ -24,5 +24,12 @@ jobs:
       - uses: actions/setup-node@v1.4.3
         with:
           node-version: '12'
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/cache
+            !~/cache/exclude
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }} 
       - run: yarn
       - run: yarn run test
