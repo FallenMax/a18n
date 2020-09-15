@@ -29,32 +29,32 @@ Effortlessly add I18n support for existing projects with static analysis and cod
 
 > WARNING: existing project code will be modified, backup or commit before proceed
 
-1. Install as project dependency
+Install as project dependency
 
 ```sh
 cd that_legacy_codebase
 npm install --save a18n # or: yarn add a18n
 ```
 
-2. Scan and modify code files (.js, .ts, .jsx, .tsx) in `src` directory, this will wrap _non-english_ text strings with translation calls:
+Scan and modify code files (.js, .ts, .jsx, .tsx) in `src` directory, this will wrap _non-english_ text strings with translation calls:
 
 ```sh
 npx a18n wrap src --write
 ```
 
-3. Manually check for unintended modifications and fix them
+Manually check for unintended modifications and fix them
 
 - use comment `// @a18n-ignore` to ignore next line
 - use comment `/* @a18n-ignore-file */` to ignore entire file
 
-4. Extract locale resources to translate (will generate `zh-CN.json`, `en.json` in `./locales` directory):
+Extract locale resources to translate (will generate `zh-CN.json`, `en.json` in `./locales` directory):
 
 ```sh
 npx a18n extract src ./locales --locales zh-CN,en
 ```
 
-5. Translate resources under `./locales` (e.g. from Chinese to English), after that we should have something like this:
-   (key is added by `a18n` tool, value is filled by some human translator)
+Translate resources under `./locales` (e.g. from Chinese to English), after that we should have something like this:
+(key is added by `a18n` tool, value is filled by some human translator)
 
 ```js
 {
@@ -74,7 +74,7 @@ npx a18n extract src ./locales --locales zh-CN,en
 }
 ```
 
-6. Load translation resources and specify language at the start of your application, this must be done before running any other code
+Load translation resources and specify language at the start of your application, **this must be done BEFORE running any other code**
 
 ```js
 import a18n from 'a18n'
@@ -96,7 +96,7 @@ See: `npx a18n --help`
 
 ### 1. Why is it important to load translation resources and specify a locale **before ** all other code is run?
 
-This can be illustrated with this snippet:
+This can be illustrated with this example:
 
 ```js
 const s = a18n('apple') // we don't have locale resources for the moment
