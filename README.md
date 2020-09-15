@@ -1,6 +1,6 @@
 # a18n
 
-[![npm package](https://img.shields.io/npm/v/a18n.svg)](https://www.npmjs.com/package/a18n)
+[![npm package](https://img.shields.io/npm/v/a18n.svg)](https://www.npmjs.com/package/a18n) [![Coverage](https://img.shields.io/codecov/c/github/fallenmax/a18n)](https://codecov.io/github/fallenmax/a18n)
 
 [English](./README.md) | [中文](./README_zh-cn.md)
 
