@@ -148,7 +148,7 @@ export const tsxWrapper = ({ ext }: { ext: string }) => (
             break
           }
 
-          // <div>  中文  </div> => <div>  {'中文'}  </div>
+          // <div>  中文  </div> => <div>  {a18n('中文')}  </div>
           case 'JSXText': {
             if (needTranslate(node.value)) {
               const emptyStart = node.value.match(/^\s*/)![0]

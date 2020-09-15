@@ -8,6 +8,8 @@ Automated I18n solution for JavaScript/TypeScript/React.
 
 Effortlessly add I18n support for existing projects with static analysis and code modification.
 
+[![Screen Recoding](./assets/screen-recording.gif)](./assets/screen-recording.gif)
+
 ## Features
 
 - CLI (for code modification):
