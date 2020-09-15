@@ -27,9 +27,7 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
       tokens: true,
       sourceType: 'module',
       plugins: [
-        ...(ext === 'jsx' || ext === 'tsx'
-          ? (['jsx'] as parser.ParserPlugin[])
-          : []),
+        'jsx',
         'typescript',
         'objectRestSpread',
         'asyncGenerators',
