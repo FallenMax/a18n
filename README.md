@@ -1,12 +1,12 @@
 # a18n
 
-[![npm package](https://img.shields.io/npm/v/a18n.svg)](https://www.npmjs.com/package/a18n) [![Coverage](https://github.com/fallenmax/a18n/workflows/CI/badge.svg)](https://codecov.io/github/fallenmax/a18n) [![Coverage](https://img.shields.io/codecov/c/github/fallenmax/a18n)](https://codecov.io/github/fallenmax/a18n)
+[![npm package](https://img.shields.io/npm/v/a18n.svg)](https://www.npmjs.com/package/a18n) [![build](https://github.com/fallenmax/a18n/workflows/CI/badge.svg)](https://github.com/FallenMax/a18n/actions) [![Coverage](https://img.shields.io/codecov/c/github/fallenmax/a18n)](https://codecov.io/github/fallenmax/a18n)
 
 [English](./README.md) | [中文](./README_zh-cn.md)
 
-Automated I18n solution for JavaScript/TypeScript/React, effortlessly add I18n support for existing projects.
+Automated I18n solution for JavaScript/TypeScript/React.
 
-(done by adding translation calls and extracting text through static analysis and code modification)
+Effortlessly add I18n support for existing projects with static analysis and code modification.
 
 ## Features
 
