@@ -8,4 +8,4 @@ export const LIB_IGNORE_LINE = '@a18n-ignore'
 export const LIB_IGNORE_FILE = '@a18n-ignore-file'
 export const LIB_PROPERTY_KEY_ID = '_'
 
-export const DEFAULT_LOCALES = ['en', 'zh-CN', 'zh-HK', 'zh-TW', 'zh-YUE']
+export const DEFAULT_LOCALES = ['en']
