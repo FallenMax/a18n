@@ -8,7 +8,7 @@ Automated I18n solution for JavaScript/TypeScript/React.
 
 Effortlessly add I18n support for existing projects with static analysis and code modification.
 
-[![Screen Recoding](./assets/screen-recording.gif)](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif)
+[![Screen Recoding](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif?raw=true)](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif)
 
 ## Features
 
