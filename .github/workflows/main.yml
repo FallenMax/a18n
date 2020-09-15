@@ -6,9 +6,9 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -30,6 +30,7 @@ jobs:
             ~/cache
             !~/cache/exclude
             **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }} 
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
       - run: yarn
       - run: yarn run test
+      - run: CODECOV_TOKEN="bcdc5807-7c73-408d-b413-6baa835475ef" yarn run coverage
