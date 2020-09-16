@@ -94,7 +94,7 @@ a18n`${user}是最棒的` // === "nufan is way better than A"
 
 ### a18n runtime
 
-See `Getting Started` section, that's everything to know
+See [Getting Started](#getting-started) section, that's everything to know
 
 ### a18n CLI
 
