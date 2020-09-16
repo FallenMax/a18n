@@ -6,32 +6,32 @@
 
 Automated I18n solution for JavaScript/TypeScript/React.
 
-Effortlessly add I18n support for existing projects with static analysis and code modification.
+This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, making adding I18n support a breeze.
 
 [![Screen Recoding](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif?raw=true)](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif)
 
 ## Features
 
 - CLI (for code modification):
-  - Automatically wrap texts with translation calls (`a18n wrap`).
+  - Wrap texts with translation calls (`a18n wrap`)
     > Note:
-    > "Wrap" is only applied to non-ascii word/sentences (e.g. Chinese, Japanese, etc), so source texts in English are not supported for now. Discussion is welcomed.
-  - Automatically extract translation resources from code (`a18n extract`)
-  - Support dynamic text, including ES6 template literals, JSX interpolated text
-  - Support TypeScript, including `?? `, `.? ` syntax
-  - Support React/JSX, properly handles JSX attributes and text
-  - Ignore lines or entire file with special comments.
-  - Preserves original code formatting during "wrapping" (though [prettier](https://github.com/prettier/prettier) is still recommended for formatting)
-  - Support remove `a18n` calls from code, in case you regret using this lib.
-- Runtime:
+    > "Wrap" is only applied to non-ascii texts (e.g. Chinese, Japanese, etc), so texts in English are not supported for now. Discussion is welcomed
+  - Extract text (from translation calls) from code (`a18n extract`)
+  - Support dynamic texts in ES6 Template String
+  - Support TypeScript
+  - Support React, or any framework that uses JSX
+  - Ignore lines or files with annotation comments
+  - Preserves original code formatting while modifying code (though [prettier](https://github.com/prettier/prettier) is still recommended)
+  - Bonus: in case you regret using this lib (please tell us why), you can remove `a18n` calls (`a18n purge`)
+- Runtime (for text translation):
   - Translate static and dynamic texts using provided locale resource
-  - Lightweight and just works (~ 200 loc)
+  - Tiny (~ 200 loc)
 
 ## Getting Started
 
 > WARNING: existing project code will be modified, backup or commit before proceed
 
-Install as project dependency
+Install as dependency (not devDependency, as `s18n` is both a CLI and a runtime)
 
 ```sh
 cd that_legacy_codebase
@@ -49,7 +49,7 @@ Manually check for unintended modifications and fix them
 - use comment `// @a18n-ignore` to ignore next line
 - use comment `/* @a18n-ignore-file */` to ignore entire file
 
-Extract locale resources to translate (will generate `zh-CN.json`, `en.json` in `./locales` directory):
+Extract texts passed to translation calls (will generate `zh-CN.json`, `en.json` in `./locales` directory):
 
 ```sh
 npx a18n extract src ./locales --locales zh-CN,en
@@ -90,7 +90,13 @@ const user = 'A'
 a18n`${user}是最棒的` // === "nufan is way better than A"
 ```
 
-## More on CLI usage:
+## Documentation
+
+### a18n runtime
+
+See [Getting Started](#getting-started) section, that's everything to know
+
+### a18n CLI
 
 See: `npx a18n --help`
 
