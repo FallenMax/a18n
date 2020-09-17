@@ -31,7 +31,7 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
 
 > WARNING: existing project code will be modified, backup or commit before proceed
 
-Install as dependency (not devDependency, as `s18n` is both a CLI and a runtime)
+Install as dependency (not devDependency, as `a18n` is both a CLI and a runtime)
 
 ```sh
 cd that_legacy_codebase

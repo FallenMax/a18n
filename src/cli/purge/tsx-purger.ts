@@ -108,7 +108,7 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
           }
 
           case 'CallExpression': {
-            // remove s18n.xxxx()
+            // remove a18n.xxxx()
             if (
               t.isMemberExpression(node.callee) &&
               t.isIdentifier(node.callee.object) &&
@@ -116,7 +116,7 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
             ) {
               path.remove()
             }
-            // remove require("s18n")
+            // remove require("a18n")
             else if (t.isIdentifier(node.callee)) {
               const isRequireLibModule =
                 node.callee.name === 'require' &&
