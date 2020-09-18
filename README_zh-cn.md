@@ -1,6 +1,12 @@
 # a18n
 
+[![npm package](https://img.shields.io/npm/v/a18n.svg)](https://www.npmjs.com/package/a18n) [![build](https://github.com/fallenmax/a18n/workflows/CI/badge.svg)](https://github.com/FallenMax/a18n/actions) [![Coverage](https://img.shields.io/codecov/c/github/fallenmax/a18n)](https://codecov.io/github/fallenmax/a18n)
+
+[English](https://github.com/FallenMax/a18n/blob/master/README.md) | [中文](https://github.com/FallenMax/a18n/blob/master/README_zh-cn.md)
+
 低成本国际化(i18n)方案，通过静态分析代码，自动添加翻译调用，提取翻译资源。
+
+[![Screen Recoding](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif?raw=true)](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif)
 
 ## 功能
 
@@ -9,19 +15,20 @@
 - 命令行工具：
   - 自动修改源码，添加翻译调用(`a18n wrap`)
   - 自动根据源码提取待翻译资源 (`a18n extract`)
-  - 支持动态文本翻译，如:
+  - 支持提取/翻译动态文本(ES6 模版字符串形式):
     > \`Hello \${name}\` --> a18n\`Hello\${name}\`
-  - 支持 TypeScript，已支持 `??`, `.?` 等 esnext 语法
-  - 支持 React/JSX, 支持处理 JSX 属性和文本
+  - 支持 TypeScript
+  - 支持 React/JSX
   - 支持用特殊注释来忽略不需要处理的行或整个文件
-  - 尽量保持代码原始排版（基于 recast），当然还是推荐用 prettier 重排版一次
+  - 尽量保持代码原始排版（基于 recast），虽然还是推荐用 prettier 重排版一次
+  - Bonus：如果后悔用这个库，还可以用 `a18n purge` 清除代码中所有 `a18n` 调用
 - 运行时：
   - 根据提供的语言和资源，完成静态文本和动态文本的翻译
   - 轻量 (~ 200 loc)
 
 ## 开始
 
-> 共 6 步
+> 警告: 现有项目代码会被 a18n 修改，推荐先备份或提交
 
 ```sh
 cd that-legacy-codebase
@@ -50,28 +57,33 @@ npx a18n extract . ./locales --locales zh-CN,en
   "这句话没有翻译": null,  // 没翻译，线上会fallback到备选语言或原始字符串
 
   "早上好": "Good morning", // 静态文本
-  "我是一个有ID的文本#some.id": "I have ID and you don't" // 有ID的静态文本，ID需要手动标注： a18n('我是一个有ID的文本', {_: 'some.id'})
-  "%s是最棒的": "nufan is way better than %s", // 动态文本
+  "我是一个有ID的文本#some.id": "I have an ID and you don't" // 有ID的静态文本，ID需要手动标注： a18n('我是一个有ID的文本', {_: 'some.id'})
+  "%s是最棒的": "%s is kinda okay", // 动态文本
 }
 ```
 
 ```js
-// 6. **运行任何其他代码前，加载翻译资源，指定语言**  之后`a18n()`工具就能给出正确的翻译结果了
+// 6. **运行任何其他代码前**，加载翻译资源，指定语言
 import a18n from 'a18n'
-
-// 加载翻译资源
-a18n.addLocaleResource('en-US', require('./en.json'))
-
-// 设置要使用的语言
+a18n.addLocaleResource('en', require('./en.json'))
 a18n.setLocale('en')
 
-// Done. 在此之后，界面语言会根据资源文件提供的翻译展示
-...other code...
+// 之后`a18n()`工具就能给出正确的翻译结果了
+a18n('早上好') // === "Good morning"
+
+const user = 'A'
+a18n`${user}是最棒的` // === "A is kinda okay"
 ```
 
-## 查看更多命令、参数：
+## 文档
 
-`npx a18n --help`
+### a18n 运行时
+
+见 [开始](#开始) 章节，只有这几个 API
+
+### a18n 命令行
+
+见: `npx a18n --help`
 
 ## Q & A
 
@@ -81,10 +93,10 @@ a18n.setLocale('en')
 
 例如：
 
-```
-const s = a18n('apple')`  //  s = 'apple'
+```js
+const s = a18n('apple') //  s = 'apple'
 
-a18n.addLocaleResource('zh-CN', {apple: '苹果'})
+a18n.addLocaleResource('zh-CN', { apple: '苹果' })
 a18n.setLocale('zh-CN')
 
 console.log(s) // s = 'apple' , 而不是期望的'苹果'
@@ -92,6 +104,6 @@ console.log(s) // s = 'apple' , 而不是期望的'苹果'
 
 ### 2. 什么情况下需要指定 namespace (命名空间)?
 
-项目中如果有多个依赖项进一步引用了 a18n，某些打包工具（webpack）可能在打包后使其共用一份 a18n 代码，运行时共用一份 a18n 实例。由于目前 a18n 是单例模式，这就可能造成 locale resource/locale 发生冲突。
+项目中如果有多个依赖项进一步引用了 a18n，某些打包工具（webpack）可能在打包后使其共用一份 a18n 代码，运行时共用一份 a18n 实例。由于目前 a18n 是单例模式，这就可能造成翻译资源（中相同的 key）发生冲突。
 
 为解决这个问题，不同依赖可以通过 getA18n(namespace) 工厂方法获得专有的 a18n 实例(只要 namespace 不同)，实现不同项目间资源和配置相互独立，不受干扰。也可以通过指定相同的 namespace 来获得相同的 a18n 实例，共享语言和翻译资源。
