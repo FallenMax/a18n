@@ -42,7 +42,6 @@ describe('i18n', () => {
     let ms = Date.now() - start
     console.info(`translate ${count} static texts: ${ms}ms`)
     expect(found).toBe(count)
-    expect(ms).toBeLessThan(1000)
   })
 
   test('dynamic text', async () => {
@@ -84,7 +83,6 @@ describe('i18n', () => {
     let ms = Date.now() - start
     console.info(`translate ${count} dynamic texts: ${ms}ms`)
     expect(found).toBe(count)
-    expect(ms).toBeLessThan(3000)
   })
 
   describe('locale / resource', () => {
