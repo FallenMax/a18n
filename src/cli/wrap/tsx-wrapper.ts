@@ -82,7 +82,7 @@ export const tsxWrapper = ({ ext }: { ext: string }) => (
           // '中文' => a18n('中文')
           case 'StringLiteral': {
             if (needTranslate(node.value)) {
-              // 忽略已经是 a18n(’中文’) 的情况
+              // ignore when it's already: a18n(’中文’)
               const parent = path.parent
               if (
                 parent.type === 'CallExpression' &&
@@ -124,7 +124,7 @@ export const tsxWrapper = ({ ext }: { ext: string }) => (
           case 'TemplateLiteral': {
             const { quasis } = node
             if (quasis.some((q) => needTranslate(q.value.raw))) {
-              // 忽略已经是 a18n`中文${someVar}` 的情况
+              // ignore when it's already: a18n`中文${someVar}`
               const parent = path.parent
               if (
                 parent.type === 'TaggedTemplateExpression' &&

@@ -54,7 +54,12 @@
     ],
     "coverageReporters": [
       "lcov"
-    ]
+    ],
+    "globals": {
+      "ts-jest": {
+        "diagnostics": false
+      }
+    }
   },
   "engines": {
     "node": ">=8.1"

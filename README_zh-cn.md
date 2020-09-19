@@ -47,10 +47,9 @@ npx a18n extract . ./locales --locales zh-CN,en
 
 /*********** en.json **********/
 {
-  "这句话没有翻译": null,  // 没翻译，线上会fallback到备选语言或原始字符串
+  "no-translation": null,  // 没翻译，线上会fallback到备选语言或原始字符串
 
   "早上好": "Good morning", // 静态文本
-  "我是一个有ID的文本#some.id": "I have ID and you don't" // 有ID的静态文本，ID需要手动标注： a18n('我是一个有ID的文本', {_: 'some.id'})
   "%s是最棒的": "nufan is way better than %s", // 动态文本
 }
 ```
@@ -66,7 +65,7 @@ a18n.addLocaleResource('en-US', require('./en.json'))
 a18n.setLocale('en')
 
 // Done. 在此之后，界面语言会根据资源文件提供的翻译展示
-...other code...
+// ...other code...
 ```
 
 ## 查看更多命令、参数：

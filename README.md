@@ -61,18 +61,13 @@ Translate resources under `./locales` (e.g. from Chinese to English), after that
 ```js
 {
   // missing translation, will fallback to original key
-  "这句话没有翻译": null,
+  "no-translation": null,
 
   // static text
   "早上好": "Good morning",
 
-  // static text with key "some.id"
-  // key should be manually annotated using "_" param
-  // e.g.: a18n('我是一个有Key的文本', {_: 'some.id'})
-  "我是一个有Key的文本#some.id": "I have Key and you don't"
-
   // dynamic text
-  "%s是最棒的": "nufan is way better than %s",
+  "%s是最好吃的": "pizza is better than %s",
 }
 ```
 
@@ -86,8 +81,8 @@ a18n.setLocale('en')
 // now, a18n() will produce translated result
 a18n('早上好') // === "Good morning"
 
-const user = 'A'
-a18n`${user}是最棒的` // === "nufan is way better than A"
+const food = 'A'
+a18n`${food}是最好吃的` // === "pizza is better than A"
 ```
 
 ## Documentation

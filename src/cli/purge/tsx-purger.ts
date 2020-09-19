@@ -12,7 +12,6 @@ import {
 const fromStringLiteral = (
   node: object | null | undefined,
 ): undefined | string => {
-  if (!node) return undefined
   if (t.isStringLiteral(node)) {
     return node.value
   } else {

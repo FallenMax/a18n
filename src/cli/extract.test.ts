@@ -21,7 +21,6 @@ describe('extract', () => {
       '"无效名称"错误。无法识别公式中的文本。',
       '我喜欢',
       '这样子',
-      '带ID#some.id',
     ]
 
     const keys = [] as string[]
@@ -41,7 +40,6 @@ describe('extract', () => {
       '"无效名称"错误。无法识别公式中的文本。',
       '我喜欢',
       '这样子',
-      '带ID#some.id',
     ]
 
     const exported = exporters.json(
