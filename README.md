@@ -26,6 +26,7 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
 - Runtime (for text translation):
   - Translate static and dynamic texts using provided locale resource
   - Tiny (~ 200 loc)
+  - Fast, dynamic texts are compiled into template at first run
 
 ## Getting Started
 
