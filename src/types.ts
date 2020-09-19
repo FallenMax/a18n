@@ -1,3 +1,6 @@
+export const INTERPOLATE_MARKER_REGEX = /(%s|%\d)/g
+export const INTERPOLATE_MARKER_WHOLE_REGEX = /^%(s|\d)$/g
+
 /** contextual information of a text */
 export type Context = {
   path: string
@@ -11,7 +14,7 @@ export type SourceText =
   | { type: 'string'; text: string; id?: string }
   | {
       type: 'interpolated'
-      textParts: string[]
+      textParts: readonly string[]
       id?: string
     }
 
@@ -19,10 +22,13 @@ export type SourceTextWithContext = SourceText & {
   context: Context
 }
 
-export type TranslateValue = null | string | { [K: string]: string }
+export type TranslateValue = null | string
 
 export type LocaleResource = {
   [K: string]: TranslateValue
+}
+export type LocaleResourceCompiled = {
+  [K: string]: TranslateValue | Function
 }
 
 export type LocaleResourceExtracted = {

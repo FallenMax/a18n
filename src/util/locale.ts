@@ -14,36 +14,25 @@ export const isValidLocaleResource = (o: any): o is LocaleResource => {
 
   return Object.keys(o).every((key) => {
     const value = o[key]
-    return (
-      value == null || typeof value === 'string' || typeof value === 'object'
-    )
+    return value == null || typeof value === 'string'
   })
 }
 
 export const sourceTextToKey = (sourceText: SourceText): string => {
   switch (sourceText.type) {
     case 'string': {
-      const { id, text } = sourceText
-      const key = id ? `${text}#${id}` : text
-      return key
+      return sourceText.text
     }
     case 'interpolated': {
       const partCount = sourceText.textParts.length
-      if (partCount === 1) {
-        return sourceText.textParts[0]
-      } else if (partCount === 2) {
-        return `${sourceText.textParts[0]}%s${sourceText.textParts[1]}`
-      } else {
-        return sourceText.textParts
-          .map((part, i) => {
-            return i === sourceText.textParts.length - 1
-              ? part
-              : `${part}%${i + 1}`
-          })
-          .join('')
-      }
+      return sourceText.textParts
+        .map((part, i) => {
+          return i === partCount - 1
+            ? part
+            : `${part}%${partCount === 2 ? 's' : i + 1}`
+        })
+        .join('')
     }
-
     default:
       return assertNever(sourceText)
   }

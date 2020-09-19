@@ -4,7 +4,7 @@ import * as t from '@babel/types'
 // @ts-ignore
 import * as recast from 'recast'
 import { Context, SourceText, SourceTextWithContext } from '../../types'
-import { LIB_IDENTIFIER, LIB_PROPERTY_KEY_ID } from '../constants'
+import { LIB_IDENTIFIER } from '../constants'
 
 const fromStringLiteral = (
   node: object | null | undefined,
@@ -15,27 +15,6 @@ const fromStringLiteral = (
   } else {
     return undefined
   }
-}
-
-const fromObjectExpression = (
-  node: object | null | undefined,
-): undefined | string => {
-  if (!node) return undefined
-  if (t.isObjectExpression(node)) {
-    for (let index = 0; index < node.properties.length; index++) {
-      const p = node.properties[index]
-      if (
-        t.isProperty(p) &&
-        t.isIdentifier(p.key) &&
-        p.key.name === LIB_PROPERTY_KEY_ID &&
-        t.isStringLiteral(p.value)
-      ) {
-        const id = p.value.value
-        return id
-      }
-    }
-  }
-  return undefined
 }
 
 export const tsxExtractor = ({ ext }: { ext: string }) => (
@@ -123,41 +102,25 @@ export const tsxExtractor = ({ ext }: { ext: string }) => (
             t.isIdentifier(node.callee) &&
             node.callee.name === LIB_IDENTIFIER
           ) {
-            const arg0 = node.arguments[0]
-            const arg1 = node.arguments[1]
             switch (node.arguments.length) {
               case 1: {
+                const arg0 = node.arguments[0]
                 const text = fromStringLiteral(arg0)
                 invariant(
                   text != null,
                   node,
-                  `${LIB_IDENTIFIER}() has signature: a18n(text:string, params?:{_:string}), instead received: ${node.arguments.map(
+                  `${LIB_IDENTIFIER}() has signature: a18n(text:string), instead received: ${node.arguments.map(
                     (a) => a.type,
                   )}`,
                 )
                 addStaticText(node, text!)
                 break
               }
-
-              case 2: {
-                const text = fromStringLiteral(arg0)
-                const id = fromObjectExpression(arg1)
-                invariant(
-                  text != null && id != null,
-                  node,
-                  `expect ${LIB_IDENTIFIER}() has signature: a18n(text:string, params?:{_:string}), instead received: ${node.arguments.map(
-                    (a) => a.type,
-                  )}`,
-                )
-                addStaticText(node, text!, id!)
-                break
-              }
-
               default: {
                 invariant(
                   false,
                   node,
-                  `export ${LIB_IDENTIFIER}() has signature: a18n(text:string, params?:{_:string}), instead received: ${node.arguments.map(
+                  `export ${LIB_IDENTIFIER}() has signature: a18n(text:string), instead received: ${node.arguments.map(
                     (a) => a.type,
                   )}`,
                 )

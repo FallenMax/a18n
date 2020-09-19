@@ -1,22 +1,41 @@
 import { LocaleResource } from '../types'
-import { isValidLocaleResource } from '../util/locale'
-import { getInterpolateResult, getTextResult, interweave } from './translator'
+import { clearCompileCache, compile, DEBUG_getCompileCache } from './translator'
 
 //-------------- Types --------------
 
 export { LocaleResource } from '../types'
 export { getA18n }
 
-export interface TranslateParams {
-  _?: string
-}
+export interface A18n {
+  /**
+   * translate static text
+   *
+   * @example
+   * ```js
+   * a18n("Good morning")
+   * ```
+   */
+  (text: string): string
 
-export interface a18n {
-  /** translate static text */
-  (text: string, params?: TranslateParams): string
+  /**
+   * translate interpolated text (using ES6 Tagged Template syntax)
+   *
+   * @example
+   * ```js
+   * a18n`Hello ${userName}`
+   * ```
+   */
+  (parts: TemplateStringsArray, ...values: (string | number)[]): string
 
-  /** translated interpolated text */
-  (parts: TemplateStringsArray, ...values: any[]): string
+  // /**
+  //  * translate JSX Element array (using ES6 Tagged Template syntax)
+  //  *
+  //  * @example
+  //  * ```jsx
+  //  * <div>{ai8n.x`Hello {userName}`}</div> // `userName` is not limited to string, and can be any ReactNode
+  //  * ```
+  //  */
+  // x(parts: TemplateStringsArray, ...values: ReactNode[]): ReactNode[]
 
   /**
    * add resource for a language
@@ -40,82 +59,112 @@ export interface a18n {
    *
    * resources of different namespaces are isolated
    */
-  getA18n(namespace: string): a18n
+  getA18n(namespace: string): A18n
 
   DEBUG_reset(): void
+  DEBUG_print(): void
 }
 
 const DEFAULT_NAMESPACE = '__default_namespace__'
-const DEFAULT_LOCALE = 'zh-CN'
+// @ts-ignore
+const langs = typeof navigator !== 'undefined' ? navigator.languages || [] : []
+const DEFAULT_LOCALE = langs[0] || 'en-US'
 
-let instances: { [Namespace: string]: a18n } = {}
+let instances: { [Namespace: string]: A18n } = {}
 
-const getA18n = (namespace: string): a18n => {
+const getA18n = (namespace: string): A18n => {
   if (!instances[namespace]) {
     instances[namespace] = create()
   }
   return instances[namespace]
 }
 
-const DEBUG_reset = () => {
-  instances = {}
-}
-
-const create = (): a18n => {
+const create = (): A18n => {
   let currentLocale = DEFAULT_LOCALE
-  let localeCache: { [K: string]: LocaleResource } = {}
+  let resources: { [K: string]: LocaleResource } = {
+    [currentLocale]: {},
+  }
+  /** must be a reference to resources */
+  let resource: LocaleResource = resources[currentLocale]
 
-  const addLocaleResource: a18n['addLocaleResource'] = (locale, resource) => {
-    if (!isValidLocaleResource(resource)) {
-      throw new Error('fetched locale resource is invalid')
-    } else {
-      localeCache[locale] = {
-        ...(localeCache[locale] || {}),
-        ...resource,
-      }
+  const addLocaleResource: A18n['addLocaleResource'] = (locale, res) => {
+    if (!resources[locale]) {
+      resources[locale] = {}
     }
+
+    Object.assign(resources[locale], res)
+    clearCompileCache()
   }
 
-  const setLocale: a18n['setLocale'] = (locale: string) => {
+  const setLocale: A18n['setLocale'] = (locale: string) => {
     if (typeof locale !== 'string') {
-      throw new Error(`'locale' is required`)
+      throw new TypeError(`'locale' is expect to be a string`)
     }
-
     currentLocale = locale
+    if (!resources[currentLocale]) {
+      resources[currentLocale] = {}
+    }
+    resource = resources[currentLocale]
+    clearCompileCache()
   }
 
-  const a18n = ((...args: any[]): string => {
-    if (typeof args[0] === 'string') {
-      const [text, params] = args
-      const id: string | undefined =
-        params && typeof params._ === 'string' ? params._ : undefined
-      const key = id ? text + '#' + id : text
-      if (!key) return ''
-      const currentLocaleText = getTextResult(key, localeCache[currentLocale])
-      if (typeof currentLocaleText === 'string') return currentLocaleText
-
+  function a18n(text: any): string {
+    if (typeof text === 'string') {
+      const translated = resource[text]
+      if (typeof translated === 'string') {
+        return translated
+      }
       return text
-    } else if (args[0] && typeof args[0].length === 'number') {
-      const [parts, ...values] = args
-
-      return (
-        getInterpolateResult(parts, values, localeCache[currentLocale]) ||
-        interweave(parts, values)
-      )
-    } else {
-      console.warn('[a18n] invalid input:', ...args)
-      return ''
     }
-  }) as a18n
+
+    if (text && typeof text.length === 'number') {
+      const template = compile(text, resource)
+      const args = arguments
+
+      return template
+        .map((item) => (typeof item === 'number' ? args[item] : item))
+        .join('')
+    }
+
+    console.warn('[a18n] invalid input:', arguments)
+    return String(text)
+  }
 
   //-------------- instance methods --------------
+  // a18n.x = (parts, ...values): ReactNode[] => {
+  //   return []
+  // }
   a18n.addLocaleResource = addLocaleResource
   a18n.setLocale = setLocale
   a18n.getLocale = () => currentLocale
 
   //-------------- static methods --------------
-  a18n.getA18n = getA18n
-  a18n.DEBUG_reset = DEBUG_reset
+  a18n.getA18n = (namespace: string): A18n => {
+    if (!instances[namespace]) {
+      instances[namespace] = create()
+    }
+    return instances[namespace]
+  }
+
+  a18n.DEBUG_reset = () => {
+    instances = {}
+    resources = {}
+    resource = {}
+    currentLocale = DEFAULT_LOCALE
+    clearCompileCache()
+  }
+
+  a18n.DEBUG_print = () => {
+    const compileCache = DEBUG_getCompileCache()
+    console.log(
+      JSON.stringify(
+        { currentLocale, resources, resource, compileCache },
+        null,
+        2,
+      ),
+    )
+    return { currentLocale, resources, resource, compileCache }
+  }
 
   return a18n
 }

@@ -8,109 +8,233 @@ describe('i18n', () => {
     a18n.DEBUG_reset()
   })
 
-  test('a18n(staticText)', async () => {
-    a18n.addLocaleResource('en', {
-      这句话没有翻译: null,
-      '这句话翻译翻译了，但是为空字符串': '',
-      // 这句话也没有: undefined
-      表格做的真好: 'nufan is cool',
+  test('static text', async () => {
+    a18n.addLocaleResource('custom', {
+      'no-translation': null,
+      'empty-string': '',
+      你好: 'Hello',
     })
-    a18n.setLocale('en')
+    a18n.setLocale('custom')
 
-    expect(a18n('没有这个翻译')).toEqual('没有这个翻译')
-    expect(a18n('这句话没有翻译')).toEqual('这句话没有翻译')
-    expect(a18n('这句话翻译翻译了，但是为空字符串')).toEqual('')
-    expect(a18n('这句话也没有')).toEqual('这句话也没有')
-    expect(a18n('表格做的真好')).toEqual('nufan is cool')
-    expect(a18n(undefined as any)).toEqual('')
+    expect(a18n('你好')).toEqual('Hello')
+    expect(a18n('no-translation')).toEqual('no-translation')
+    expect(a18n('non-existed-key')).toEqual('non-existed-key')
+    expect(a18n('empty-string')).toEqual('')
+    expect(a18n(undefined as any)).toEqual('undefined')
     expect(a18n('')).toEqual('')
+    expect(a18n(0 as any)).toEqual('0')
+  })
+
+  test('static text: benchmark', async () => {
+    a18n.addLocaleResource('en', {
+      source: 'target',
+    })
+    a18n.setLocale('en')
+
+    let found = 0
+    let count = 1e5
+    let start = Date.now()
+    for (let index = 0; index < count; index++) {
+      if (a18n('source')) {
+        found++
+      }
+    }
+    let ms = Date.now() - start
+    console.info(`translate ${count} static texts: ${ms}ms`)
+    expect(found).toBe(count)
+    expect(ms).toBeLessThan(1000)
+  })
+
+  test('dynamic text', async () => {
+    a18n.addLocaleResource('custom', {
+      'Hello, %s': '你好 %s',
+      'Empty%1%2%3': '',
+      '%s': 'translated: %s',
+      '%1%2': 'translated: %2%1',
+      'a%1b%2c': 'translated: c%2b%1a',
+      'nothing %s': null,
+    })
+    a18n.setLocale('custom')
+
+    expect(a18n`Hello, ${'FallenMax'}`).toEqual('你好 FallenMax')
+    expect(a18n`Empty${'a'}${'b'}${'c'}`).toEqual('')
+    expect(a18n`${'x'}`).toEqual('translated: x')
+    expect(a18n`${'x'}${'y'}`).toEqual('translated: yx')
+    expect(a18n`a${1}b${2}c`).toEqual('translated: c2b1a')
+
     expect(a18n``).toEqual('')
-    expect(a18n`${undefined}`).toEqual('undefined')
-    expect(a18n(0 as any)).toEqual('')
+    expect(a18n`non-${'existed'}`).toEqual('non-existed')
+    expect(a18n`nothing ${'matters'}`).toEqual('nothing matters')
   })
 
-  test('a18n(staticText, {_: "some.id"})', async () => {
+  test('dynamic text: benchmark', async () => {
     a18n.addLocaleResource('en', {
-      'hi#short.greeting': '早1',
+      'x%1y%2z%3w': 'a%3b%1c',
     })
     a18n.setLocale('en')
 
-    // 测试以ID为key
-    expect(a18n('hi', { _: 'short.greeting' })).toEqual('早1')
-    expect(a18n('hi')).toEqual('hi')
-    // text不对
-    expect(a18n('ho', { _: 'short.greeting' })).toEqual('ho')
-    // id不对
-    expect(a18n('hi', { _: 'short.greeting2' })).toEqual('hi')
-    // 都不对
-    expect(a18n('h0', { _: 'short.greeting2' })).toEqual('h0')
+    let found = 0
+    let count = 1e5
+    let start = Date.now()
+    for (let index = 0; index < count; index++) {
+      if (a18n`x${1}y${2}z${3}w` === 'a3b1c') {
+        found++
+      }
+    }
+    let ms = Date.now() - start
+    console.info(`translate ${count} dynamic texts: ${ms}ms`)
+    expect(found).toBe(count)
+    expect(ms).toBeLessThan(3000)
   })
 
-  test('a18n`dynamic ${texts}`', async () => {
-    a18n.addLocaleResource('en', {
-      // 这句话${也}没有: undefined
-      '%s是最棒的': 'nufan is way better than %s',
-    })
-    a18n.setLocale('en')
+  describe('locale / resource', () => {
+    test('should support setLocale before addLocaleResource', () => {
+      a18n.setLocale('custom')
 
-    expect(a18n`这句话${'也'}没有`).toEqual('这句话也没有')
-    expect(a18n`${'小明'}是最棒的`).toEqual('nufan is way better than 小明')
-  })
+      a18n.addLocaleResource('custom', {
+        x: 'x-translated',
+        'x%s': 'x%s-translated',
+      })
 
-  test('setLocale', () => {
-    a18n.setLocale('en')
-
-    a18n.addLocaleResource('en', { added: '额外添加', added1: '额外添加1' })
-
-    a18n.addLocaleResource('en', {
-      added: '额外添加·改',
-      added2: '额外添加2',
+      expect(a18n('x')).toEqual('x-translated')
+      expect(a18n`x${1}`).toEqual('x1-translated')
     })
 
-    expect(a18n('added')).toEqual('额外添加·改')
-    expect(a18n('added1')).toEqual('额外添加1')
-    expect(a18n('added2')).toEqual('额外添加2')
+    test('should support setLocale after addLocaleResource', () => {
+      a18n.addLocaleResource('custom', {
+        x: 'x-translated',
+        'x%s': 'x%s-translated',
+      })
+
+      a18n.setLocale('custom')
+      expect(a18n('x')).toEqual('x-translated')
+      expect(a18n`x${1}`).toEqual('x1-translated')
+    })
+
+    test('should support switching locales', () => {
+      a18n.addLocaleResource('lang-a', {
+        x: 'x-translated-a',
+      })
+      a18n.addLocaleResource('lang-b', {
+        x: 'x-translated-b',
+      })
+
+      a18n.setLocale('lang-a')
+      expect(a18n('x')).toEqual('x-translated-a')
+
+      a18n.setLocale('lang-b')
+      expect(a18n('x')).toEqual('x-translated-b')
+
+      a18n.setLocale('lang-a')
+      expect(a18n('x')).toEqual('x-translated-a')
+    })
+
+    test('should merge with existing resource, overwritting values with same keys', () => {
+      a18n.setLocale('custom')
+
+      a18n.addLocaleResource('custom', {
+        x: 'x-translated',
+        'x%s': 'x%s-translated',
+        y: 'y-translated',
+        'y%s': 'y%s-translated',
+      })
+
+      a18n.addLocaleResource('custom', {
+        x: 'x-translated-modified',
+        'x%s': 'x%s-translated-modified',
+        z: 'z-translated',
+        'z%s': 'z%s-translated',
+      })
+
+      expect(a18n('x')).toEqual('x-translated-modified')
+      expect(a18n`x${1}`).toEqual('x1-translated-modified')
+      expect(a18n('y')).toEqual('y-translated')
+      expect(a18n`y${1}`).toEqual('y1-translated')
+      expect(a18n('z')).toEqual('z-translated')
+      expect(a18n`z${1}`).toEqual('z1-translated')
+    })
   })
 
-  test('single instance, multiple namespaces', () => {
-    // module a
-    {
-      const a18n = getA18n('a')
+  describe('namespace', () => {
+    test('different namespaces are isolated', () => {
+      // module a
+      {
+        const a18n = getA18n('a')
 
-      a18n.addLocaleResource('en', { 苹果: 'apple', 梨子: 'pear' })
-      a18n.setLocale('en')
-      expect(a18n('苹果')).toEqual('apple')
-      expect(a18n('梨子')).toEqual('pear')
-      expect(a18n('香蕉')).toEqual('香蕉')
-    }
+        a18n.addLocaleResource('en', {
+          x: 'x-translated',
+          'x%s': 'x%s-translated',
+          y: 'y-translated',
+          'y%s': 'y%s-translated',
+        })
+        a18n.setLocale('en')
+        expect(a18n('x')).toEqual('x-translated')
+        expect(a18n`x${1}`).toEqual('x1-translated')
+        expect(a18n('y')).toEqual('y-translated')
+        expect(a18n`y${1}`).toEqual('y1-translated')
+        expect(a18n('z')).toEqual('z')
+        expect(a18n`z${1}`).toEqual('z1')
+      }
 
-    // module b
-    {
-      const a18n = getA18n('b')
-      a18n.addLocaleResource('en', { 苹果: 'not apple', 香蕉: 'banana' })
-      a18n.setLocale('en')
-      expect(a18n('苹果')).toEqual('not apple')
-      expect(a18n('梨子')).toEqual('梨子')
-      expect(a18n('香蕉')).toEqual('banana')
-    }
+      // module b
+      {
+        const a18n = getA18n('b')
+        a18n.addLocaleResource('en', {
+          x: 'x-translated-modified',
+          'x%s': 'x%s-translated-modified',
+          z: 'z-translated',
+          'z%s': 'z%s-translated',
+        })
+        a18n.setLocale('en')
+        expect(a18n('x')).toEqual('x-translated-modified')
+        expect(a18n`x${1}`).toEqual('x1-translated-modified')
+        expect(a18n('y')).toEqual('y')
+        expect(a18n`y${1}`).toEqual('y1')
+        expect(a18n('z')).toEqual('z-translated')
+        expect(a18n`z${1}`).toEqual('z1-translated')
+      }
 
-    // module a runs again, using its locale resource...
-    {
-      const a18n = getA18n('a')
-      expect(a18n('苹果')).toEqual('apple')
-      expect(a18n('梨子')).toEqual('pear')
-      expect(a18n('香蕉')).toEqual('香蕉')
+      // module a runs again, should be using its own locale/resource
+      {
+        const a18n = getA18n('a')
 
-      // ...and changes locale
-      a18n.setLocale('jp')
-    }
+        a18n.addLocaleResource('en', {
+          x: 'x-translated',
+          'x%s': 'x%s-translated',
+          y: 'y-translated',
+          'y%s': 'y%s-translated',
+        })
+        a18n.setLocale('en')
+        expect(a18n('x')).toEqual('x-translated')
+        expect(a18n`x${1}`).toEqual('x1-translated')
+        expect(a18n('y')).toEqual('y-translated')
+        expect(a18n`y${1}`).toEqual('y1-translated')
+        expect(a18n('z')).toEqual('z')
+        expect(a18n`z${1}`).toEqual('z1')
 
-    // module b runs again, using its locale and resources
-    {
-      const a18n = getA18n('b')
-      expect(a18n('苹果')).toEqual('not apple')
-      expect(a18n('梨子')).toEqual('梨子')
-      expect(a18n('香蕉')).toEqual('banana')
-    }
+        // and changes locale
+        a18n.setLocale('jp')
+      }
+
+      // module b runs again, should be using its own locale/resources
+      {
+        const a18n = getA18n('b')
+        a18n.addLocaleResource('en', {
+          x: 'x-translated-modified',
+          'x%s': 'x%s-translated-modified',
+          z: 'z-translated',
+          'z%s': 'z%s-translated',
+        })
+        a18n.setLocale('en')
+        expect(a18n('x')).toEqual('x-translated-modified')
+        expect(a18n`x${1}`).toEqual('x1-translated-modified')
+        expect(a18n('y')).toEqual('y')
+        expect(a18n`y${1}`).toEqual('y1')
+        expect(a18n('z')).toEqual('z-translated')
+        expect(a18n`z${1}`).toEqual('z1-translated')
+
+        expect(a18n.getLocale()).toBe('en')
+      }
+    })
   })
 })

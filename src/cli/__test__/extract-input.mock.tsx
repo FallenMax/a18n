@@ -9,7 +9,6 @@ const s15 = (
     <input type="text" placeholder={a18n('这样子')} />
   </div>
 )
-const s16 = a18n('带ID', { _: 'some.id' })
 
 const r = null as any
 const r1 = { ...{}, ...{} }

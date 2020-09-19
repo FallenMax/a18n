@@ -1,83 +1,80 @@
-import { LocaleResource } from '../types'
-import { sourceTextToKey } from '../util/locale'
+import {
+  INTERPOLATE_MARKER_REGEX,
+  INTERPOLATE_MARKER_WHOLE_REGEX,
+  LocaleResource,
+} from '../types'
 
-export const interweave = (
-  parts: TemplateStringsArray,
-  values: any[],
-): string => {
-  return parts
-    .map((part, index) => {
-      return index === parts.length - 1 ? part : `${part}${values[index]}`
+type CompiledTemplate = (string | number)[]
+
+type CompiledResource = {
+  [K: string]: undefined | CompiledTemplate | CompiledResource
+}
+
+const SYMBOL_END =
+  typeof Symbol !== 'undefined'
+    ? Symbol.for('a18n-compiled')
+    : '__$a18n-compiled'
+
+let cache: CompiledResource = {}
+
+const loadTemplate = (parts: string[]): CompiledTemplate | undefined => {
+  let o = cache as any
+  for (let i = 0; i < parts.length && o; i++) {
+    o = o[parts[i]]
+  }
+  return o && o[SYMBOL_END]
+}
+
+const saveTemplate = (path: string[], template: CompiledTemplate) => {
+  let o: any = cache
+  for (let i = 0; i < path.length && o; i++) {
+    o = o[path[i]] || (o[path[i]] = {} as CompiledResource)
+  }
+  o[SYMBOL_END] = template
+  return template
+}
+
+const doCompile = (parts: string[], resource: LocaleResource) => {
+  const partCount = parts.length
+  const keyTemplate = parts
+    .map((part, i) => {
+      return i === partCount - 1
+        ? part
+        : `${part}%${partCount === 2 ? 's' : i + 1}`
     })
     .join('')
-}
+  const valueTemplate = resource[keyTemplate]
 
-export const getTextResult = (
-  key: string,
-  resource: LocaleResource | undefined,
-): string | undefined => {
-  return resource && (resource[key] as string | undefined)
-}
+  const templateString =
+    typeof valueTemplate === 'string' ? valueTemplate : keyTemplate
 
-const PLACEHOLDER_RE = /%(s|\d)/g
-export const getInterpolateResult = (
-  parts: TemplateStringsArray,
-  values: any[],
-  resource: LocaleResource | undefined,
-): string | undefined => {
-  try {
-    if (!resource) {
-      return undefined
-    }
-    const key = sourceTextToKey({
-      type: 'interpolated',
-      textParts: parts as any,
-    })
-    const translation = resource[key]
-    if (!translation) {
-      return undefined
-    }
-    // use %s, %1, %2, ... as variable placeholders
-    let valueMap = {} as {
-      [K: string]: any
-    }
-    let i = 0
-    key.replace(PLACEHOLDER_RE, (match) => {
-      valueMap[match] = values[i]
-      i = i + 1
-      return match
-    })
-    const interpolate = (
-      str: string,
-      valueMap: {
-        [K: string]: any
-      },
-    ): string => {
-      return str.replace(PLACEHOLDER_RE, (match) => {
-        if (valueMap[match] !== null) {
-          return String(valueMap[match])
-        } else {
-          console.warn('[a18n] interpolation failed:', { str, valueMap })
-          return match
-        }
-      })
-    }
-    if (typeof translation === 'string') {
-      return interpolate(translation, valueMap)
-    } else if (typeof translation === 'object') {
-      return undefined
+  return templateString.split(INTERPOLATE_MARKER_REGEX).map((item) => {
+    const pos = INTERPOLATE_MARKER_WHOLE_REGEX.exec(item)?.[1]
+    if (pos) {
+      return pos === 's' ? 1 : Number(pos)
     } else {
-      console.warn('[a18n] Unexpected value: ' + JSON.stringify(translation))
-      return undefined
+      return item
     }
-  } catch (error) {
-    const args = {
-      parts,
-      values,
-      resource,
-    }
-    console.error('[a18n] error when translating: ', args)
-    console.error(error)
-    return undefined
-  }
+  })
+}
+
+/**
+ * preprocess dynamic text into template, making future translation faster
+ * (~10x than previous parse/interpolate approach)
+ *
+ * @example
+ * key-value pair: { 'x%1y%2z%3w': 'aa%3bb%1cc' }
+ * will generate a compiled template: ["aa", 3, "bb", 1, "cc"]
+ * and be cached under path [x,y,z,w,SYMBOL_END]
+ */
+export const compile = (parts: string[], resource: LocaleResource) => {
+  return loadTemplate(parts) || saveTemplate(parts, doCompile(parts, resource))
+}
+
+export const clearCompileCache = () => {
+  cache = {}
+}
+
+export const DEBUG_getCompileCache = () => {
+  return cache
 }
