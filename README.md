@@ -144,8 +144,8 @@ This method should be called BEFORE every `a18n` translation functions are calle
 
 Get an a18n instance with specified namespace.
 
-Difference namespaces will yield different a18n instances, each with independent locale/resources
-Same namespaces will yield same a18n instance, with shared locale/resources
+Difference namespaces will yield different a18n instances, each with independent locale/resources.
+Same namespaces will yield same a18n instance, with shared locale/resources.
 
 This API enables:
 
