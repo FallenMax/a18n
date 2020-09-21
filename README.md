@@ -88,11 +88,77 @@ a18n`${food}是最好吃的` // === "pizza is better than A"
 
 ## Documentation
 
-### a18n runtime
+### A18n Runtime
 
-See [Getting Started](#getting-started) section, that's everything to know
+#### `a18n(text)`
 
-### a18n CLI
+> Don't call this function yourself, this should be added by `a18n wrap` command
+
+Translate static text, `text` should be literal string (instead of variable), example:
+
+```js
+a18n('你好') // good
+a18n(greeting) // bad, `a18n extract` cannot extract "你好" from scanning code
+```
+
+#### a18n\`text\${variable}\`
+
+> Don't call this function yourself, this should be added by `a18n wrap` command
+
+Translate dynamic text, this is an ES6 syntax called [Tagged Template Literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
+
+### `a18n.setLocale(locale)`
+
+Set locale to use.
+
+This method should be called BEFORE every `a18n` translation functions are called.
+
+`a18n` use `navigator.language` as initial value
+
+### `a18n.addLocaleResource(locale, resource)`
+
+Add resource for specified locale. Resource is usually extracted using `a18n extract` command.
+
+Example resource:
+
+```json
+{
+  // missing translation, will fallback to original key
+  "no-translation": null,
+
+  // static text
+  "早上好": "Good morning",
+
+  // dynamic text
+  "%s是最好吃的": "pizza is better than %s"
+}
+```
+
+Will merge with existing resource and overwrite values that have same keys.
+
+This method should be called BEFORE every `a18n` translation functions are called.
+
+### (Advanced) `a18n.getA18n(namespace)`
+
+> this method is usually auto added with `a18n wrap` command, with `--namespace` option
+
+Get an a18n instance with specified namespace.
+
+Difference namespaces will yield different a18n instances, each with independent locale/resources
+Same namespaces will yield same a18n instance, with shared locale/resources
+
+This API enables:
+
+- Sharing a18n instance/resources from different parts of system (even from different copies of `a18n` code)
+- NOT sharing a18n instance/resources with other parts of system (even from same piece of `a18n` code)
+
+Limitation:
+
+- _Sharing_ only applies where `a18n` code are running in the same page and have same reference of `globalThis`, and cannot share across different browser tabs, web workers, embedded iframes.
+
+See [Q & A](#2-when-do-i-need-to-specify-a-namespace) for more background.
+
+### A18n CLI
 
 See: `npx a18n --help`
 
