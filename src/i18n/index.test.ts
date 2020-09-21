@@ -154,7 +154,10 @@ describe('i18n', () => {
   })
 
   describe('namespace', () => {
-    test('different namespaces are isolated', () => {
+    test('different namespaces should be isolated (different instance/locale/resource)', () => {
+      expect(getA18n('a')).toBe(getA18n('a'))
+      expect(getA18n('a')).not.toBe(getA18n('b'))
+
       // module a
       {
         const a18n = getA18n('a')
@@ -233,6 +236,63 @@ describe('i18n', () => {
 
         expect(a18n.getLocale()).toBe('en')
       }
+    })
+
+    test(`same namespaces (that sharing same globalThis) should have same a18n instance
+// build a18n before run this test, so that the two copies of a18n are equivalent but not same
+`, () => {
+      let rootA = require('./index')
+      let rootB = require('../../dist/i18n/index')
+      expect(rootA).not.toBe(rootB)
+
+      let a = rootA.getA18n('same namespace')
+      let c = a.getA18n('same namespace')
+      let b = rootB.getA18n('same namespace')
+      let d = b.getA18n('same namespace')
+      expect(a).toBe(b)
+      expect(b).toBe(c)
+      expect(c).toBe(d)
+    })
+  })
+
+  describe('DEBUG_reset', () => {
+    const setup = () => {
+      const def = a18n
+      const a = a18n.getA18n('a')
+      const b = a18n.getA18n('b')
+      def.addLocaleResource('en', { x: 'y-def' })
+      def.setLocale('en')
+      a.addLocaleResource('en', { x: 'y-a' })
+      a.setLocale('en')
+      b.addLocaleResource('en', { x: 'y-b' })
+      b.setLocale('en')
+      return { def, a, b }
+    }
+    test('can be resetted from local instance', () => {
+      const { def, a, b } = setup()
+
+      expect(def('x')).toBe('y-def')
+      expect(a('x')).toBe('y-a')
+      expect(b('x')).toBe('y-b')
+
+      def.DEBUG_reset()
+
+      expect(def('x')).toBe('x')
+      expect(a('x')).toBe('x')
+      expect(b('x')).toBe('x')
+    })
+    test('can be resetted from global instance', () => {
+      const { def, a, b } = setup()
+
+      expect(def('x')).toBe('y-def')
+      expect(a('x')).toBe('y-a')
+      expect(b('x')).toBe('y-b')
+
+      a.DEBUG_reset()
+
+      expect(def('x')).toBe('x')
+      expect(a('x')).toBe('x')
+      expect(b('x')).toBe('x')
     })
   })
 })

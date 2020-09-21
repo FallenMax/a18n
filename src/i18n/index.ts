@@ -61,7 +61,9 @@ export interface A18n {
    */
   getA18n(namespace: string): A18n
 
-  DEBUG_reset(): void
+  /** reset current instance */
+  DEBUG_reset(resetSelfOnly?: boolean): void
+
   DEBUG_print(): void
 }
 
@@ -70,13 +72,32 @@ const DEFAULT_NAMESPACE = '__default_namespace__'
 const langs = typeof navigator !== 'undefined' ? navigator.languages || [] : []
 const DEFAULT_LOCALE = langs[0] || 'en-US'
 
-let instances: { [Namespace: string]: A18n } = {}
+const ROOT = '__$a18n-instances'
+
+declare var window: any
+/** globalThis */
+const _global =
+  typeof globalThis !== 'undefined'
+    ? globalThis
+    : typeof window !== 'undefined'
+    ? window
+    : typeof global !== 'undefined'
+    ? global
+    : (() => {
+        console.warn(
+          '[a18n] cannot resolve globalThis, sharing by namespace is disabled',
+        )
+        return {}
+      })()
+
+type A18nInstances = {
+  [K: string]: A18n
+}
+let globalInstances: A18nInstances = _global[ROOT] || (_global[ROOT] = {})
+let localInstances: A18nInstances = {}
 
 const getA18n = (namespace: string): A18n => {
-  if (!instances[namespace]) {
-    instances[namespace] = create()
-  }
-  return instances[namespace]
+  return globalInstances[namespace] || (globalInstances[namespace] = create())
 }
 
 const create = (): A18n => {
@@ -84,7 +105,7 @@ const create = (): A18n => {
   let resources: { [K: string]: LocaleResource } = {
     [currentLocale]: {},
   }
-  /** must be a reference to resources */
+  /** must always be a reference to resources, `addLocaleResource` depend on this  */
   let resource: LocaleResource = resources[currentLocale]
 
   const addLocaleResource: A18n['addLocaleResource'] = (locale, res) => {
@@ -142,21 +163,26 @@ const create = (): A18n => {
   a18n.getLocale = () => currentLocale
 
   //-------------- static methods --------------
-  a18n.getA18n = (namespace: string): A18n => {
-    if (!instances[namespace]) {
-      instances[namespace] = create()
-    }
-    return instances[namespace]
-  }
+  a18n.getA18n = getA18n
 
-  a18n.DEBUG_reset = () => {
-    instances = {}
+  a18n.DEBUG_reset = (resetSelfOnly = false) => {
     resources = {}
     resource = {}
     currentLocale = DEFAULT_LOCALE
     clearCompileCache()
-  }
 
+    if (!resetSelfOnly) {
+      const instances = [
+        ...Object.values(globalInstances),
+        ...Object.values(localInstances),
+      ]
+      instances.forEach((instance) => {
+        if (instance !== a18n) {
+          instance.DEBUG_reset(true)
+        }
+      })
+    }
+  }
   a18n.DEBUG_print = () => {
     const compileCache = DEBUG_getCompileCache()
     console.log(
@@ -172,7 +198,7 @@ const create = (): A18n => {
   return a18n
 }
 
-const a18n = getA18n(DEFAULT_NAMESPACE)
+const a18n = (localInstances[DEFAULT_NAMESPACE] = create())
 
 module.exports = a18n
 
