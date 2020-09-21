@@ -107,7 +107,7 @@ a18n(greeting) // bad, `a18n extract` cannot extract "你好" from scanning code
 
 Translate dynamic text, this is an ES6 syntax called [Tagged Template Literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
 
-### `a18n.setLocale(locale)`
+#### `a18n.setLocale(locale)`
 
 Set locale to use.
 
@@ -115,7 +115,7 @@ This method should be called BEFORE every `a18n` translation functions are calle
 
 `a18n` use `navigator.language` as initial value
 
-### `a18n.addLocaleResource(locale, resource)`
+#### `a18n.addLocaleResource(locale, resource)`
 
 Add resource for specified locale. Resource is usually extracted using `a18n extract` command.
 
@@ -138,7 +138,7 @@ Will merge with existing resource and overwrite values that have same keys.
 
 This method should be called BEFORE every `a18n` translation functions are called.
 
-### (Advanced) `a18n.getA18n(namespace)`
+#### (Advanced) `a18n.getA18n(namespace)`
 
 > this method is usually auto added with `a18n wrap` command, with `--namespace` option
 
