@@ -121,9 +121,12 @@ const create = (): A18n => {
       const template = compile(text, resource)
       const args = arguments
 
-      return template
-        .map((item) => (typeof item === 'number' ? args[item] : item))
-        .join('')
+      let result = ''
+      for (let index = 0; index < template.length; index++) {
+        const item = template[index]
+        result += typeof item === 'number' ? String(args[item]) : item
+      }
+      return result
     }
 
     console.warn('[a18n] invalid input:', arguments)

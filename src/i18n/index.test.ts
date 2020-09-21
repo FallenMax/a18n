@@ -32,10 +32,10 @@ describe('i18n', () => {
     a18n.setLocale('en')
 
     let found = 0
-    let count = 1e5
+    let count = 1e6
     let start = Date.now()
     for (let index = 0; index < count; index++) {
-      if (a18n('source')) {
+      if (a18n('source') === 'target') {
         found++
       }
     }
@@ -73,7 +73,7 @@ describe('i18n', () => {
     a18n.setLocale('en')
 
     let found = 0
-    let count = 1e5
+    let count = 1e6
     let start = Date.now()
     for (let index = 0; index < count; index++) {
       if (a18n`x${1}y${2}z${3}w` === 'a3b1c') {

@@ -1,8 +1,4 @@
-import {
-  INTERPOLATE_MARKER_REGEX,
-  INTERPOLATE_MARKER_WHOLE_REGEX,
-  LocaleResource,
-} from '../types'
+import { LocaleResource } from '../types'
 
 type CompiledTemplate = (string | number)[]
 
@@ -48,8 +44,8 @@ const doCompile = (parts: string[], resource: LocaleResource) => {
   const templateString =
     typeof valueTemplate === 'string' ? valueTemplate : keyTemplate
 
-  return templateString.split(INTERPOLATE_MARKER_REGEX).map((item) => {
-    const pos = INTERPOLATE_MARKER_WHOLE_REGEX.exec(item)?.[1]
+  return templateString.split(/(%s|%\d)/g).map((item) => {
+    const pos = /^%(s|\d)$/g.exec(item)?.[1]
     if (pos) {
       return pos === 's' ? 1 : Number(pos)
     } else {

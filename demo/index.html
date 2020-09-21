@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perf</title>
+    <style>
+      table {
+        border-collapse: collapse;
+      }
+      thead {
+        background: black;
+        color: var(--color-body-text);
+        text-align: left;
+      }
+      td,
+      th {
+        padding: 5px 10px;
+        max-width: 200px;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+      }
+      tr {
+        min-height: 40px;
+        border: 1px solid lightgray;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>a18n perf</h1>
+    <table>
+      <tr>
+        <th>Operation</th>
+        <th>Count</th>
+        <th>Time(ms)</th>
+        <th>Empty Implementation(ms)</th>
+      </tr>
+
+      <!-- static translation -->
+      <tr>
+        <td>
+          <button onclick="translateStaticText()">translate static text</button>
+        </td>
+        <td><input type="number" value="1000000" id="static_text_count" /></td>
+        <td id="static_text_time"></td>
+        <td id="static_text_time_ref"></td>
+      </tr>
+
+      <!-- dynamic translation -->
+      <tr>
+        <td>
+          <button onclick="translateDynamicText()">
+            translate dynamic text
+          </button>
+        </td>
+        <td><input type="number" value="1000000" id="dynamic_text_count" /></td>
+        <td id="dynamic_text_time"></td>
+        <td id="dynamic_text_time_ref"></td>
+      </tr>
+    </table>
+    <script src="./index.js"></script>
+  </body>
+</html>

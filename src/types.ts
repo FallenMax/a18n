@@ -1,6 +1,3 @@
-export const INTERPOLATE_MARKER_REGEX = /(%s|%\d)/g
-export const INTERPOLATE_MARKER_WHOLE_REGEX = /^%(s|\d)$/g
-
 /** contextual information of a text */
 export type Context = {
   path: string
