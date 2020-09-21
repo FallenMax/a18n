@@ -32,5 +32,6 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
       - run: yarn
+      - run: yarn run build
       - run: yarn run test
       - run: CODECOV_TOKEN="bcdc5807-7c73-408d-b413-6baa835475ef" yarn run coverage
