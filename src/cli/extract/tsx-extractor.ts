@@ -5,6 +5,7 @@ import * as t from '@babel/types'
 import * as recast from 'recast'
 import { Context, SourceText, SourceTextWithContext } from '../../types'
 import { LIB_IDENTIFIER } from '../constants'
+import { readFile } from '../util/file'
 
 const fromStringLiteral = (
   node: object | null | undefined,
@@ -17,7 +18,7 @@ const fromStringLiteral = (
   }
 }
 
-export const tsxExtractor = ({ ext }: { ext: string }) => (
+export const extractCode = (
   code: string,
   filePath: string,
 ): (SourceText & { context: Context })[] => {
@@ -151,4 +152,28 @@ export const tsxExtractor = ({ ext }: { ext: string }) => (
   })
 
   return sourceTexts
+}
+
+export const extractFile = (filePath: string) => {
+  try {
+    const content = readFile(filePath)
+    const locales = extractCode(content, filePath)
+    return {
+      ok: true,
+      locales,
+    }
+  } catch (error) {
+    const loc = error?.loc
+    if (loc) {
+      console.error(
+        `[a18n] error processing: ${filePath}:${loc.line}:${loc.column}`,
+      )
+    } else {
+      console.error(`[a18n] error processing: ${filePath}`)
+    }
+    console.error(error)
+    return {
+      ok: false,
+    }
+  }
 }

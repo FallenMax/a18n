@@ -23,7 +23,7 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
   - Ignore lines or files with annotation comments
   - Preserves original code formatting while modifying code (though [prettier](https://github.com/prettier/prettier) is still recommended)
   - Bonus: in case you regret using this lib (please tell us why), you can remove `a18n` calls (`a18n purge`)
-- Runtime (for text translation):
+- API (for text translation):
   - Translate static and dynamic texts using provided locale resource
   - Tiny (~ 200 loc)
   - Fast, dynamic texts are compiled into template at first run
@@ -88,7 +88,7 @@ a18n`${food}是最好吃的` // === "pizza is better than A"
 
 ## Documentation
 
-### A18n Runtime
+### API
 
 #### `a18n(text)`
 
@@ -158,7 +158,7 @@ Limitation:
 
 See [Q & A](#2-when-do-i-need-to-specify-a-namespace) for more background.
 
-### A18n CLI
+### CLI
 
 See: `npx a18n --help`
 

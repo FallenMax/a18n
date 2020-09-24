@@ -1,7 +1,6 @@
 import * as parser from '@babel/parser'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-// @ts-ignore
 import * as recast from 'recast'
 import {
   LIB_FACTORY_IDENTIFIER,
@@ -10,9 +9,10 @@ import {
   LIB_IGNORE_LINE,
   LIB_MODULE,
 } from '../constants'
+import { readFile, writeFile } from '../util/file'
 
 export const needTranslate = (str: string): boolean => {
-  return /[^\u0000-\u007F]+/.test(str)
+  return /[^\u0000-\u007F]+/.test(str) && !/^\s*$/.test(str)
 }
 
 const isCommentLine = (line: string | null): boolean => {
@@ -29,7 +29,8 @@ const fromStringLiteral = (
     return undefined
   }
 }
-export const tsxWrapper = ({ ext }: { ext: string }) => (
+
+export const wrapCode = (
   code: string,
   options: { namespace: string | undefined },
 ): string => {
@@ -232,4 +233,39 @@ export const tsxWrapper = ({ ext }: { ext: string }) => (
   }
 
   return output
+}
+
+export const wrapFile = (
+  filePath: string,
+  params: {
+    write: boolean
+    namespace: string | undefined
+  },
+) => {
+  try {
+    const { namespace } = params
+    const content = readFile(filePath)
+    const newContent = wrapCode(content, { namespace })
+
+    const changed = newContent !== content
+    if (changed && params.write) {
+      writeFile(filePath, newContent)
+    }
+    return {
+      ok: true,
+    }
+  } catch (error) {
+    const loc = error?.loc
+    if (loc) {
+      console.error(
+        `[a18n] error processing: ${filePath}:${loc.line}:${loc.column}`,
+      )
+    } else {
+      console.error(`[a18n] error processing: ${filePath}`)
+    }
+    console.error(error)
+    return {
+      ok: false,
+    }
+  }
 }

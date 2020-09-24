@@ -8,6 +8,7 @@ import {
   LIB_IDENTIFIER,
   LIB_MODULE,
 } from '../constants'
+import { readFile, writeFile } from '../util/file'
 
 const fromStringLiteral = (
   node: object | null | undefined,
@@ -18,9 +19,7 @@ const fromStringLiteral = (
     return undefined
   }
 }
-export const tsxPurger = ({ ext }: { ext: string }) => (
-  code: string,
-): string => {
+export const purgeCode = (code: string): string => {
   const parse = (source: string) =>
     parser.parse(source, {
       tokens: true,
@@ -71,7 +70,10 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
                 ) {
                   const grandGrandParentPath = grandParentPath.parentPath
                   // <>{"中文"}<>
-                  if (t.isJSXElement(grandGrandParentPath.node)) {
+                  if (
+                    t.isJSXElement(grandGrandParentPath.node) ||
+                    t.isJSXFragment(grandGrandParentPath.node)
+                  ) {
                     grandParentPath.replaceWith(t.jsxText(value))
                   } else {
                     grandParentPath.replaceWith(node)
@@ -151,4 +153,38 @@ export const tsxPurger = ({ ext }: { ext: string }) => (
   }).code
 
   return output
+}
+
+export const purgeFile = (
+  filePath: any,
+  params: {
+    write: boolean
+    namespace: string | undefined
+  },
+) => {
+  try {
+    const content = readFile(filePath)
+    const newContent = purgeCode(content)
+
+    const changed = newContent !== content
+    if (changed && params.write) {
+      writeFile(filePath, newContent)
+    }
+    return {
+      ok: true,
+    }
+  } catch (error) {
+    const loc = error?.loc
+    if (loc) {
+      console.error(
+        `[a18n] error processing: ${filePath}:${loc.line}:${loc.column}`,
+      )
+    } else {
+      console.error(`[a18n] error processing: ${filePath}`)
+    }
+    console.error(error)
+    return {
+      ok: false,
+    }
+  }
 }

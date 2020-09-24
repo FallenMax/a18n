@@ -1,6 +1,10 @@
-import { resolve, relative } from 'path'
 import * as glob from 'fast-glob'
-import { readFileSync, writeFileSync, statSync } from 'fs'
+import { readFileSync, statSync, writeFileSync } from 'fs'
+import { relative, resolve } from 'path'
+
+export const isSourceCode = (filePath: any): boolean => {
+  return /\.(js|ts)x?$/.test(filePath)
+}
 
 export const isValidPath = (path: string): boolean => {
   try {

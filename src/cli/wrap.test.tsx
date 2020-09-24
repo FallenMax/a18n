@@ -1,13 +1,19 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { wrappers } from './wrap'
-import { needTranslate } from './wrap/tsx-wrapper'
+import * as prettier from 'prettier'
+import { needTranslate, wrapCode } from './wrap/tsx-wrapper'
+
+const format = (str: string) => {
+  return prettier.format(str, { parser: 'babel-ts' })
+}
 
 describe('wrap', () => {
   test('needTranslate() should return true for non-ascii words and sentences', () => {
     const n = needTranslate
     expect(n('')).toBe(false)
-    expect(n('  ')).toBe(false)
+    expect(n(' ')).toBe(false)
+    expect(n('\t')).toBe(false)
+    expect(n('      ')).toBe(false) // nbsp
     expect(n(' \n ')).toBe(false)
     expect(n('some')).toBe(false)
     expect(n('some thing')).toBe(false)
@@ -107,9 +113,11 @@ describe('wrap', () => {
       { encoding: 'utf-8' },
     )
 
-    expect(wrappers.tsx(source, { namespace: undefined })).toBe(expected)
+    expect(format(wrapCode(source, { namespace: undefined }))).toBe(
+      format(expected),
+    )
     // ensure we don't double wrap a18n()
-    expect(wrappers.tsx(expected, { namespace: undefined })).toBe(expected)
+    expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
   test('igore file containing `@a18n-ignore-file` ', () => {
@@ -123,25 +131,25 @@ describe('wrap', () => {
   const s = '中文'
   `
 
-    expect(wrappers.tsx(source, { namespace: undefined })).toBe(expected)
+    expect(wrapCode(source, { namespace: undefined })).toBe(expected)
 
     // ensure we don't double wrap a18n()
-    expect(wrappers.tsx(expected, { namespace: undefined })).toBe(expected)
+    expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
   test('add import statement: without namespace', () => {
-    expect(wrappers.tsx(`const s = 'english'`, { namespace: undefined })).toBe(
+    expect(wrapCode(`const s = 'english'`, { namespace: undefined })).toBe(
       `const s = 'english'`,
     )
 
     // 添加import
-    expect(wrappers.tsx(`const s = '中文'`, { namespace: undefined }))
+    expect(wrapCode(`const s = '中文'`, { namespace: undefined }))
       .toBe(`import a18n from 'a18n'
 const s = a18n('中文')`)
 
     // 不重复添加import
     expect(
-      wrappers.tsx(
+      wrapCode(
         `import a18n from 'a18n'
 const s = '中文'`,
         { namespace: undefined },
@@ -151,7 +159,7 @@ const s = a18n('中文')`)
 
     // 如果只有require，就添加require
     expect(
-      wrappers.tsx(
+      wrapCode(
         `const React = require('react')
 const s = '中文'`,
         { namespace: undefined },
@@ -164,12 +172,12 @@ const s = a18n('中文')`)
   describe('add import statement: with namespace', () => {
     test("don't need import/require", () => {
       expect(
-        wrappers.tsx(`const s = 'english'`, { namespace: 'my-namespace' }),
+        wrapCode(`const s = 'english'`, { namespace: 'my-namespace' }),
       ).toBe(`const s = 'english'`)
     })
 
     test(`add import`, () => {
-      expect(wrappers.tsx(`const s = '中文'`, { namespace: 'my-namespace' }))
+      expect(wrapCode(`const s = '中文'`, { namespace: 'my-namespace' }))
         .toBe(`import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
 const s = a18n('中文')`)
@@ -177,7 +185,7 @@ const s = a18n('中文')`)
 
     test(`replace import: replace non-namespaced a18n`, () => {
       expect(
-        wrappers.tsx(
+        wrapCode(
           `import a18n from 'a18n'
 const s = '中文'`,
           { namespace: 'my-namespace' },
@@ -189,7 +197,7 @@ const s = a18n('中文')`)
 
     test(`replace import: replace namespaced a18n`, () => {
       expect(
-        wrappers.tsx(
+        wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,
@@ -202,7 +210,7 @@ const s = a18n('中文')`)
 
     test(`add require`, () => {
       expect(
-        wrappers.tsx(
+        wrapCode(
           `const React = require('react')
 const s = '中文'`,
           { namespace: 'my-namespace' },
@@ -215,7 +223,7 @@ const s = a18n('中文')`)
 
     test(`replace require: replace non-namespaced a18n`, () => {
       expect(
-        wrappers.tsx(
+        wrapCode(
           `const a18n = require('a18n')
 const s = '中文'`,
           { namespace: 'my-namespace' },
@@ -227,7 +235,7 @@ const s = a18n('中文')`)
 
     test(`replace require: replace namespaced a18n`, () => {
       expect(
-        wrappers.tsx(
+        wrapCode(
           `const { getA18n } = require('a18n')
 const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,

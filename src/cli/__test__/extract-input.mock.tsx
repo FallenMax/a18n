@@ -10,6 +10,13 @@ const s15 = (
   </div>
 )
 
+const s15_1 = (
+  <>
+    {a18n('我喜欢2')}
+    <input type="text" placeholder={a18n('这样子2')} />
+  </>
+)
+
 const r = null as any
 const r1 = { ...{}, ...{} }
 

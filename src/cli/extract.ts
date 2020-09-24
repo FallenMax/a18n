@@ -1,26 +1,17 @@
 import mkdirp from 'mkdirp'
-import { join, parse } from 'path'
+import { join } from 'path'
 import {
   LocaleResource,
   LocaleResourceExtracted,
   SourceTextWithContext,
 } from '../types'
 import { sourceTextToKey } from '../util/locale'
-import { tsxExtractor } from './extract/tsx-extractor'
-import { getFiles, isExist, readFile, writeFile } from './util/file'
-
-const isSourceCode = (filePath: any): boolean => {
-  return /\.(js|ts)x?$/.test(filePath)
-}
-
-export const extractors = {
-  js: tsxExtractor({ ext: 'js' }),
-  jsx: tsxExtractor({ ext: 'jsx' }),
-  ts: tsxExtractor({ ext: 'ts' }),
-  tsx: tsxExtractor({ ext: 'tsx' }),
-} as {
-  [K: string]: (content: string, filePath: string) => SourceTextWithContext[]
-}
+import type * as TsxExtractor from './extract/tsx-extractor'
+import { isExist, readFile, writeFile } from './util/file'
+import { flatten } from './util/flatten'
+import { keepTruthy } from './util/keep_truthty'
+import { processFiles } from './util/process_file'
+const extractorPath = require.resolve('./extract/tsx-extractor')
 
 export const importers = {
   json: (fileContent) => {
@@ -30,8 +21,19 @@ export const importers = {
   [K: string]: (fileContent: string) => LocaleResource
 }
 
-const extensions = {
-  json: 'json',
+export const exporters = {
+  json: (resource) => {
+    const output = {} as LocaleResource
+    Object.keys(resource).forEach((key) => {
+      output[key] = resource[key].value
+    })
+    return JSON.stringify(output, null, 2)
+  },
+} as {
+  [K: string]: (
+    localeResource: LocaleResourceExtracted,
+    moduleName: string,
+  ) => string
 }
 
 export const createResource = (
@@ -53,88 +55,48 @@ export const createResource = (
   return resource
 }
 
-export const exporters = {
-  json: (resource) => {
-    const output = {} as LocaleResource
-    Object.keys(resource).forEach((key) => {
-      output[key] = resource[key].value
-    })
-    return JSON.stringify(output, null, 2)
-  },
-} as {
-  [K: string]: (
-    localeResource: LocaleResourceExtracted,
-    moduleName: string,
-  ) => string
-}
-
-const extractSourceText = (filePath: string): SourceTextWithContext[] => {
-  const content = readFile(filePath)
-  const ext = parse(filePath).ext.substr(1)
-  const extractor = extractors[ext]
-  if (!extractor) {
-    throw new Error('unknown file extension: ' + filePath)
-  }
-  const locales = extractor(content, filePath)
-  return locales
-}
-
-export const extract = (
+export const extract = async (
   path: string,
   params: {
     localeRoot: string
     locales: string[]
-    format: 'json'
     exclude?: string
+    silent?: boolean
   },
 ) => {
-  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
-  let errorFiles = [] as string[]
-
-  const sourceTexts = ([] as SourceTextWithContext[]).concat(
-    ...files.map((file) => {
-      try {
-        return extractSourceText(file)
-      } catch (error) {
-        errorFiles.push(file)
-        console.info('[a18n] error extracting:', file)
-        console.error(error)
-
-        return []
-      }
-    }),
+  const results = await processFiles<typeof TsxExtractor, 'extractFile'>(
+    path,
+    extractorPath,
+    'extractFile',
+    params,
   )
 
-  mkdirp.sync(params.localeRoot)
+  const sourceTexts = keepTruthy(
+    flatten(
+      results.map((r) => {
+        if (r.ok && r.locales) {
+          return r.locales
+        }
+      }),
+    ),
+  )
 
   const getExsitingResource = (locale: string): LocaleResource => {
     const empty = {} as LocaleResource
-    const extensions = ['json', 'js']
-    extensions.forEach((ext) => {
-      const filePath = join(params.localeRoot, `${locale}.${ext}`)
-      if (isExist(filePath)) {
-        const resource = importers[ext](readFile(filePath))
-        Object.assign(empty, resource)
-      }
-    })
+    const filePath = join(params.localeRoot, `${locale}.json`)
+    if (isExist(filePath)) {
+      const resource = importers.json(readFile(filePath))
+      Object.assign(empty, resource)
+    }
     return empty
   }
 
+  mkdirp.sync(params.localeRoot)
   params.locales.forEach((locale) => {
     const existingResource = getExsitingResource(locale)
     const nextResource = createResource(sourceTexts, existingResource)
-    const filePath = join(
-      params.localeRoot,
-      `${locale}.${extensions[params.format]}`,
-    )
-    const fileContent = exporters[params.format](nextResource, locale)
-
+    const filePath = join(params.localeRoot, `${locale}.json`)
+    const fileContent = exporters.json(nextResource, locale)
     writeFile(filePath, fileContent)
   })
-
-  if (errorFiles.length) {
-    console.info('There are errors when processing files below:')
-    console.info('---')
-    errorFiles.forEach((file) => console.info(file))
-  }
 }

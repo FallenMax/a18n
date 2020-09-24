@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { sourceTextToKey } from '../util/locale'
-import { createResource, exporters, extractors, importers } from './extract'
+import { createResource, exporters, importers } from './extract'
+import { extractCode } from './extract/tsx-extractor'
 
 describe('extract', () => {
   const filePath = resolve(
@@ -10,7 +11,7 @@ describe('extract', () => {
   )
   const source = readFileSync(filePath, { encoding: 'utf-8' })
 
-  const extracted = extractors.tsx(source, filePath)
+  const extracted = extractCode(source, filePath)
 
   test('extract source text to key', () => {
     const expected = [
@@ -21,12 +22,11 @@ describe('extract', () => {
       '"无效名称"错误。无法识别公式中的文本。',
       '我喜欢',
       '这样子',
+      '我喜欢2',
+      '这样子2',
     ]
 
-    const keys = [] as string[]
-    extracted.map(sourceTextToKey).forEach((key) => {
-      keys.push(key)
-    })
+    const keys = extracted.map(sourceTextToKey)
 
     expect(keys.sort()).toEqual(expected.sort())
   })
@@ -40,6 +40,8 @@ describe('extract', () => {
       '"无效名称"错误。无法识别公式中的文本。',
       '我喜欢',
       '这样子',
+      '我喜欢2',
+      '这样子2',
     ]
 
     const exported = exporters.json(

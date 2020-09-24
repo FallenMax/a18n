@@ -18,11 +18,21 @@ const s10 = 'plaintext'
 /** '这种注释' */
 const s13 = true ? `星期${interpolated}` : `周${interpolated}`
 const s14 = a18n`星期`
+
+// jsx text, attributes
 const s15 = (
   <div>
     我喜欢
     <input type="text" placeholder="这样子" />
+    <div>生活</div>
   </div>
+)
+
+const s15_1 = (
+  <>
+    我喜欢
+    <input type="text" placeholder="这样子" />
+  </>
 )
 
 // 保留ts类型标注

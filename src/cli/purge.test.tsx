@@ -1,7 +1,11 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { purgers } from './purge'
+import * as prettier from 'prettier'
+import { purgeCode } from './purge/tsx-purger'
 
+const format = (str: string) => {
+  return prettier.format(str, { parser: 'babel-ts' })
+}
 describe('purge', () => {
   test('remove a18n() calls and imports ', () => {
     const source = readFileSync(
@@ -13,9 +17,9 @@ describe('purge', () => {
       { encoding: 'utf-8' },
     )
 
-    expect(purgers.tsx(source, {})).toBe(expected)
+    expect(format(purgeCode(source))).toBe(format(expected))
     // ensure nothing changes for second purge
-    expect(purgers.tsx(expected, {})).toBe(expected)
+    expect(purgeCode(expected)).toBe(expected)
   })
 
   test('remove a18n methods', () => {
@@ -28,8 +32,8 @@ const a18n_ = require('a18n')
 a18n.addLocaleResource('en-US', {})
 a18n.setLocaleSync('zh-CN')`
     const expected = ``
-    expect(purgers.tsx(source, {})).toBe(expected)
+    expect(purgeCode(source)).toBe(expected)
     // ensure nothing changes for second purge
-    expect(purgers.tsx(expected, {})).toBe(expected)
+    expect(purgeCode(expected)).toBe(expected)
   })
 })
