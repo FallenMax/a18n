@@ -1,13 +1,11 @@
-import * as parser from '@babel/parser'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-// @ts-ignore
-import * as recast from 'recast'
 import {
   LIB_FACTORY_IDENTIFIER,
   LIB_IDENTIFIER,
   LIB_MODULE,
 } from '../constants'
+import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
 
 const fromStringLiteral = (
@@ -19,26 +17,9 @@ const fromStringLiteral = (
     return undefined
   }
 }
-export const purgeCode = (code: string): string => {
-  const parse = (source: string) =>
-    parser.parse(source, {
-      tokens: true,
-      sourceType: 'module',
-      plugins: [
-        'jsx',
-        'typescript',
-        'objectRestSpread',
-        'asyncGenerators',
-        'classProperties',
-        'dynamicImport',
-        'decorators-legacy',
-        'optionalCatchBinding',
-        'optionalChaining',
-        'nullishCoalescingOperator',
-      ],
-    })
 
-  const ast = recast.parse(code, { parser: { parse } })
+export const purgeCode = (code: string): string => {
+  const ast = parse(code)
 
   const lines = code.split('\n')
 
@@ -147,10 +128,7 @@ export const purgeCode = (code: string): string => {
     },
   })
 
-  let output = recast.print(ast, {
-    tabWidth: 2,
-    quote: 'single',
-  }).code
+  let output = print(ast)
 
   return output
 }

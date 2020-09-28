@@ -1,10 +1,8 @@
-import * as parser from '@babel/parser'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-// @ts-ignore
-import * as recast from 'recast'
 import { Context, SourceText, SourceTextWithContext } from '../../types'
 import { LIB_IDENTIFIER } from '../constants'
+import { parse } from '../util/ast'
 import { readFile } from '../util/file'
 
 const fromStringLiteral = (
@@ -18,66 +16,62 @@ const fromStringLiteral = (
   }
 }
 
+export const toStaticText = (
+  node: t.Node,
+  text: string,
+  filePath: string,
+  lines: string[],
+): SourceTextWithContext => {
+  const loc = node.loc
+  const line = loc ? loc.start.line : undefined
+  const column = loc ? loc.start.column : undefined
+  return {
+    type: 'string',
+    text: text,
+    context: {
+      path: filePath,
+      line,
+      column,
+      text: loc ? lines[loc.start.line] : undefined,
+    },
+  }
+}
+export const toDynamicText = (
+  node: t.Node,
+  parts: string[],
+  filePath: string,
+  lines: string[],
+): SourceTextWithContext => {
+  const loc = node.loc
+  const line = loc ? loc.start.line : undefined
+  const column = loc ? loc.start.column : undefined
+  return {
+    type: 'interpolated',
+    textParts: parts,
+    context: {
+      path: filePath,
+      line,
+      column,
+      text: loc ? lines[loc.start.line] : undefined,
+    },
+  }
+}
+
 export const extractCode = (
   code: string,
   filePath: string,
 ): (SourceText & { context: Context })[] => {
   let sourceTexts = [] as SourceTextWithContext[]
-  const addStaticText = (node: t.Node, text: string, id?: string): void => {
-    const loc = node.loc
-    const line = loc ? loc.start.line : undefined
-    const column = loc ? loc.start.column : undefined
-    sourceTexts.push({
-      type: 'string',
-      text: text,
-      id,
-      context: {
-        path: filePath,
-        line,
-        column,
-        text: loc ? lines[loc.start.line] : undefined,
-      },
-    })
+
+  const ast = parse(code)
+  const lines = code.split('\n')
+
+  const addStaticText = (node: t.Node, text: string): void => {
+    sourceTexts.push(toStaticText(node, text, filePath, lines))
   }
   const addDynamicText = (node: t.Node, parts: string[]) => {
-    const loc = node.loc
-    const line = loc ? loc.start.line : undefined
-    const column = loc ? loc.start.column : undefined
-    sourceTexts.push({
-      type: 'interpolated',
-      textParts: parts,
-      context: {
-        path: filePath,
-        line,
-        column,
-        text: loc ? lines[loc.start.line] : undefined,
-      },
-    })
+    sourceTexts.push(toDynamicText(node, parts, filePath, lines))
   }
-
-  const ast = recast.parse(code, {
-    parser: {
-      parse(source: string) {
-        return parser.parse(source, {
-          tokens: true,
-          sourceType: 'module',
-          plugins: [
-            'jsx',
-            'typescript',
-            'objectRestSpread',
-            'asyncGenerators',
-            'classProperties',
-            'dynamicImport',
-            'decorators-legacy',
-            'optionalCatchBinding',
-            'optionalChaining',
-            'nullishCoalescingOperator',
-          ],
-        })
-      },
-    },
-  })
-  const lines = code.split('\n')
 
   const invariant = (condition: any, node: t.Node, message: string) => {
     if (!condition) {
@@ -157,10 +151,10 @@ export const extractCode = (
 export const extractFile = (filePath: string) => {
   try {
     const content = readFile(filePath)
-    const locales = extractCode(content, filePath)
+    const sourceTexts = extractCode(content, filePath)
     return {
       ok: true,
-      locales,
+      sourceTexts,
     }
   } catch (error) {
     const loc = error?.loc

@@ -74,8 +74,8 @@ export const extract = async (
   const sourceTexts = keepTruthy(
     flatten(
       results.map((r) => {
-        if (r.ok && r.locales) {
-          return r.locales
+        if (r.ok && r.sourceTexts) {
+          return r.sourceTexts
         }
       }),
     ),

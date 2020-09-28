@@ -7,4 +7,4 @@ export const LIB_FACTORY_IDENTIFIER = 'getA18n'
 export const LIB_IGNORE_LINE = '@a18n-ignore'
 export const LIB_IGNORE_FILE = '@a18n-ignore-file'
 
-export const DEFAULT_LOCALES = ['en']
+export const DEFAULT_LOCALES = ['en-US']

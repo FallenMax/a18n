@@ -1,11 +1,13 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import * as prettier from 'prettier'
-import { needTranslate, wrapCode } from './wrap/tsx-wrapper'
+import { sourceTextToKey } from '../util/locale'
+import { needTranslate, wrapCode as wrap } from './wrap/tsx-wrapper'
 
 const format = (str: string) => {
   return prettier.format(str, { parser: 'babel-ts' })
 }
+const wrapCode = (...args: Parameters<typeof wrap>) => wrap(...args).output
 
 describe('wrap', () => {
   test('needTranslate() should return true for non-ascii words and sentences', () => {
@@ -118,6 +120,29 @@ describe('wrap', () => {
     )
     // ensure we don't double wrap a18n()
     expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+  })
+
+  test('returns "sourceTexts" when checkOnly', () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../src/cli/__test__/wrap-input.mock.tsx'),
+      { encoding: 'utf-8' },
+    )
+    const { sourceTexts } = wrap(source, { checkOnly: true })
+    const keys = sourceTexts.map(sourceTextToKey)
+    expect(keys).toEqual([
+      '中文',
+      '中文',
+      'eng 中间有中文 lish',
+      '中文%s',
+      '星期%s',
+      '周%s',
+      '我喜欢',
+      '这样子',
+      '生活',
+      '我喜欢',
+      '这样子',
+      '中文3',
+    ])
   })
 
   test('igore file containing `@a18n-ignore-file` ', () => {

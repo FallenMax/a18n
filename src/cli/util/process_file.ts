@@ -8,7 +8,7 @@ export const processFiles = async <
   Worker extends {
     [K in FuncName]: (file: string, params?: any) => Promise<Result> | Result
   },
-  FuncName extends keyof Worker = keyof Worker,
+  FuncName extends keyof Worker,
   Params extends {
     silent?: boolean
     exclude?: string | undefined
@@ -47,7 +47,6 @@ export const processFiles = async <
     concurrency: os.cpus().length,
   })
   worker.end()
-  const end = Date.now()
 
   const errors = keepTruthy(
     results.map((res, i) => {

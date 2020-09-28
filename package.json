@@ -11,6 +11,7 @@
     "coverage": "codecov",
     "test:watch": "jest --watch",
     "build": "tsc --project tsconfig.json",
+    "build:watch": "tsc --project tsconfig.json --incremental --tsBuildInfoFile ./tmp/.tsbuildinfo --watch",
     "watch": "tsc --project tsconfig.json --watch",
     "prepublishOnly": "yarn && yarn run build && yarn run test"
   },
@@ -66,6 +67,7 @@
   },
   "devDependencies": {
     "@types/babel__traverse": "^7.0.14",
+    "@types/chalk": "^2.2.0",
     "@types/jest": "^26.0.14",
     "@types/mkdirp": "^1.0.1",
     "@types/node": "^14.11.2",
@@ -82,6 +84,7 @@
     "@babel/parser": "^7.11.5",
     "@babel/traverse": "^7.11.5",
     "@babel/types": "^7.11.5",
+    "chalk": "^4.1.0",
     "fast-glob": "^3.2.4",
     "jest-worker": "^26.3.0",
     "mkdirp": "^1.0.4",

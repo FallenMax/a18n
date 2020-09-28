@@ -1,7 +1,6 @@
-import * as parser from '@babel/parser'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-import * as recast from 'recast'
+import { SourceTextWithContext } from '../../types'
 import {
   LIB_FACTORY_IDENTIFIER,
   LIB_IDENTIFIER,
@@ -9,6 +8,8 @@ import {
   LIB_IGNORE_LINE,
   LIB_MODULE,
 } from '../constants'
+import { toDynamicText, toStaticText } from '../extract/tsx-extractor'
+import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
 
 export const needTranslate = (str: string): boolean => {
@@ -32,32 +33,24 @@ const fromStringLiteral = (
 
 export const wrapCode = (
   code: string,
-  options: { namespace: string | undefined },
-): string => {
+  options: {
+    filePath?: string
+    namespace?: string
+    checkOnly?: boolean
+  },
+): {
+  output: string
+  sourceTexts: SourceTextWithContext[]
+} => {
   if (code.includes(LIB_IGNORE_FILE)) {
-    return code
+    return {
+      output: code,
+      sourceTexts: [],
+    }
   }
-  const { namespace } = options
+  const { namespace, checkOnly, filePath = '' } = options
 
-  const parse = (source: string) =>
-    parser.parse(source, {
-      tokens: true,
-      sourceType: 'module',
-      plugins: [
-        'jsx',
-        'typescript',
-        'objectRestSpread',
-        'asyncGenerators',
-        'classProperties',
-        'dynamicImport',
-        'decorators-legacy',
-        'optionalCatchBinding',
-        'optionalChaining',
-        'nullishCoalescingOperator',
-      ],
-    })
-
-  const ast = recast.parse(code, { parser: { parse } })
+  const ast = parse(code)
 
   let libUsed = false
   let importStatementCount = 0
@@ -67,6 +60,15 @@ export const wrapCode = (
 
   const markLibUsed = (): void => {
     libUsed = true
+  }
+
+  let sourceTexts = [] as SourceTextWithContext[]
+
+  const addStaticText = (node: t.Node, text: string): void => {
+    sourceTexts.push(toStaticText(node, text, filePath, lines))
+  }
+  const addDynamicText = (node: t.Node, parts: string[]) => {
+    sourceTexts.push(toDynamicText(node, parts, filePath, lines))
   }
 
   traverse(ast, {
@@ -96,13 +98,17 @@ export const wrapCode = (
 
               // <input placeholder="中文" /> => <input placeholder={a18n('中文') />
               if (t.isJSXAttribute(parent)) {
-                path.replaceWith(
-                  t.jsxExpressionContainer(
-                    t.callExpression(t.identifier(LIB_IDENTIFIER), [
-                      t.stringLiteral(node.value),
-                    ]),
-                  ),
-                )
+                if (checkOnly) {
+                  addStaticText(node, node.value)
+                } else {
+                  path.replaceWith(
+                    t.jsxExpressionContainer(
+                      t.callExpression(t.identifier(LIB_IDENTIFIER), [
+                        t.stringLiteral(node.value),
+                      ]),
+                    ),
+                  )
+                }
                 markLibUsed()
               } else if (
                 // is Object key
@@ -110,11 +116,15 @@ export const wrapCode = (
                 // is ts type
                 !t.isTSLiteralType(parent)
               ) {
-                path.replaceWith(
-                  t.callExpression(t.identifier(LIB_IDENTIFIER), [
-                    t.stringLiteral(node.value),
-                  ]),
-                )
+                if (checkOnly) {
+                  addStaticText(node, node.value)
+                } else {
+                  path.replaceWith(
+                    t.callExpression(t.identifier(LIB_IDENTIFIER), [
+                      t.stringLiteral(node.value),
+                    ]),
+                  )
+                }
                 markLibUsed()
               }
             }
@@ -137,12 +147,19 @@ export const wrapCode = (
               }
 
               if (parent.type !== 'TaggedTemplateExpression') {
-                path.replaceWith(
-                  t.taggedTemplateExpression(
-                    t.identifier(LIB_IDENTIFIER),
+                if (checkOnly) {
+                  addDynamicText(
                     node,
-                  ),
-                )
+                    quasis.map((q) => q.value.raw),
+                  )
+                } else {
+                  path.replaceWith(
+                    t.taggedTemplateExpression(
+                      t.identifier(LIB_IDENTIFIER),
+                      node,
+                    ),
+                  )
+                }
                 markLibUsed()
               }
             }
@@ -155,11 +172,15 @@ export const wrapCode = (
               const emptyStart = node.value.match(/^\s*/)![0]
               const emptyEnd = node.value.match(/\s*$/)![0]
               const nonEmptyText = node.value.trim()
-              path.replaceWithMultiple([
-                t.jsxText(emptyStart),
-                t.jsxExpressionContainer(t.stringLiteral(nonEmptyText)),
-                t.jsxText(emptyEnd),
-              ])
+              if (checkOnly) {
+                addStaticText(node, nonEmptyText)
+              } else {
+                path.replaceWithMultiple([
+                  t.jsxText(emptyStart),
+                  t.jsxExpressionContainer(t.stringLiteral(nonEmptyText)),
+                  t.jsxText(emptyEnd),
+                ])
+              }
               markLibUsed()
             }
             break
@@ -213,46 +234,54 @@ export const wrapCode = (
     },
   })
 
-  let output = recast.print(ast, {
-    tabWidth: 2,
-    quote: 'single',
-  }).code
+  let output: string = code
+  if (!checkOnly) {
+    output = print(ast)
 
-  if (libUsed) {
-    const shouldUseImport = importStatementCount >= requireCallExpressionCount
-    const importDeclarators = namespace
-      ? `{ ${LIB_FACTORY_IDENTIFIER} }`
-      : LIB_IDENTIFIER
-    const importStatement = shouldUseImport
-      ? `import ${importDeclarators} from '${LIB_MODULE}'\n`
-      : `const ${importDeclarators} = require('${LIB_MODULE}')\n`
-    const factoryStatement = namespace
-      ? `const a18n = ${LIB_FACTORY_IDENTIFIER}('${namespace}')\n`
-      : ''
-    output = importStatement + factoryStatement + output
+    if (libUsed) {
+      const shouldUseImport = importStatementCount >= requireCallExpressionCount
+      const importDeclarators = namespace
+        ? `{ ${LIB_FACTORY_IDENTIFIER} }`
+        : LIB_IDENTIFIER
+      const importStatement = shouldUseImport
+        ? `import ${importDeclarators} from '${LIB_MODULE}'\n`
+        : `const ${importDeclarators} = require('${LIB_MODULE}')\n`
+      const factoryStatement = namespace
+        ? `const a18n = ${LIB_FACTORY_IDENTIFIER}('${namespace}')\n`
+        : ''
+      output = importStatement + factoryStatement + output
+    }
   }
-
-  return output
+  return {
+    output,
+    sourceTexts,
+  }
 }
 
 export const wrapFile = (
   filePath: string,
   params: {
     write: boolean
-    namespace: string | undefined
+    namespace?: string
+    checkOnly?: boolean
   },
 ) => {
   try {
-    const { namespace } = params
+    const { namespace, checkOnly } = params
     const content = readFile(filePath)
-    const newContent = wrapCode(content, { namespace })
+    const { output: newContent, sourceTexts } = wrapCode(content, {
+      filePath,
+      namespace,
+      checkOnly,
+    })
 
     const changed = newContent !== content
-    if (changed && params.write) {
+    if (changed && params.write && !checkOnly) {
       writeFile(filePath, newContent)
     }
     return {
       ok: true,
+      sourceTexts,
     }
   } catch (error) {
     const loc = error?.loc
