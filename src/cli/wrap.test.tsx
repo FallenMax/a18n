@@ -122,7 +122,7 @@ describe('wrap', () => {
     expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
-  test('returns "sourceTexts" when checkOnly', () => {
+  test('returns "sourceTexts" when checkOnly=true', () => {
     const source = readFileSync(
       resolve(__dirname, '../../src/cli/__test__/wrap-input.mock.tsx'),
       { encoding: 'utf-8' },
@@ -162,36 +162,53 @@ describe('wrap', () => {
     expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
-  test('add import statement: without namespace', () => {
-    expect(wrapCode(`const s = 'english'`, { namespace: undefined })).toBe(
-      `const s = 'english'`,
-    )
+  describe('add import statement: without namespace', () => {
+    test(`don't add if not needed`, () => {
+      expect(wrapCode(`const s = 'english'`, { namespace: undefined })).toBe(
+        `const s = 'english'`,
+      )
+    })
 
-    // 添加import
-    expect(wrapCode(`const s = '中文'`, { namespace: undefined }))
-      .toBe(`import a18n from 'a18n'
+    test('add import statement', () => {
+      expect(wrapCode(`const s = '中文'`, { namespace: undefined }))
+        .toBe(`import a18n from 'a18n'
 const s = a18n('中文')`)
+    })
 
-    // 不重复添加import
-    expect(
-      wrapCode(
-        `import a18n from 'a18n'
+    test(`don't add import statement if existed`, () => {
+      expect(
+        wrapCode(
+          `import a18n from 'a18n'
 const s = '中文'`,
-        { namespace: undefined },
-      ),
-    ).toBe(`import a18n from 'a18n'
+          { namespace: undefined },
+        ),
+      ).toBe(`import a18n from 'a18n'
 const s = a18n('中文')`)
-
-    // 如果只有require，就添加require
-    expect(
-      wrapCode(
-        `const React = require('react')
+    })
+    test(`don't unnecessarily change existed import statement`, () => {
+      expect(
+        wrapCode(
+          `import * as React from 'react'
+import a18n from 'a18n'
 const s = '中文'`,
-        { namespace: undefined },
-      ),
-    ).toBe(`const a18n = require('a18n')
+          { namespace: undefined },
+        ),
+      ).toBe(`import * as React from 'react'
+import a18n from 'a18n'
+const s = a18n('中文')`)
+    })
+
+    test(`add require() if code base is using require()`, () => {
+      expect(
+        wrapCode(
+          `const React = require('react')
+const s = '中文'`,
+          { namespace: undefined },
+        ),
+      ).toBe(`const a18n = require('a18n')
 const React = require('react')
 const s = a18n('中文')`)
+    })
   })
 
   describe('add import statement: with namespace', () => {
@@ -230,6 +247,21 @@ const s = a18n('中文')`,
         ),
       ).toBe(`import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
+const s = a18n('中文')`)
+    })
+
+    test(`retain import: don't make unnecessary change`, () => {
+      expect(
+        wrapCode(
+          `import * as React from 'react'
+import { getA18n } from 'a18n'
+const a18n = getA18n('your-namespace')
+const s = a18n('中文')`,
+          { namespace: 'your-namespace' },
+        ),
+      ).toBe(`import * as React from 'react'
+import { getA18n } from 'a18n'
+const a18n = getA18n('your-namespace')
 const s = a18n('中文')`)
     })
 

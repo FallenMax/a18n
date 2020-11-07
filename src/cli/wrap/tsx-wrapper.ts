@@ -12,6 +12,54 @@ import { toDynamicText, toStaticText } from '../extract/tsx-extractor'
 import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
 
+const removeImportRequireFactory = (ast: any, lines: string[]) => {
+  traverse(ast, {
+    enter(path) {
+      const node = path.node
+      const lineStart = node.loc ? node.loc.start.line - 1 : -1
+      const lineAbove = lines[lineStart - 1]
+      if (isCommentLine(lineAbove) && lineAbove.includes(LIB_IGNORE_LINE)) {
+        return
+      }
+
+      try {
+        switch (node.type) {
+          case 'ImportDeclaration': {
+            if (node.source.value === LIB_MODULE) {
+              path.remove()
+            }
+            break
+          }
+
+          case 'CallExpression': {
+            if (t.isIdentifier(node.callee)) {
+              const isRequireLibModule =
+                node.callee.name === 'require' &&
+                fromStringLiteral(node.arguments[0]) === LIB_MODULE
+
+              const isDefineLib = node.callee.name === LIB_FACTORY_IDENTIFIER
+              if (isRequireLibModule || isDefineLib) {
+                const parent = path.findParent((path) =>
+                  t.isVariableDeclaration(path.node),
+                )
+                if (parent) {
+                  parent.remove()
+                }
+              }
+            }
+            break
+          }
+
+          default:
+            break
+        }
+      } catch (error) {
+        throw error
+      }
+    },
+  })
+}
+
 export const needTranslate = (str: string): boolean => {
   return /[^\u0000-\u007F]+/.test(str) && !/^\s*$/.test(str)
 }
@@ -53,17 +101,21 @@ export const wrapCode = (
   const ast = parse(code)
 
   let libUsed = false
+  const markLibUsed = (): void => {
+    libUsed = true
+  }
+  let libImportStatus = {
+    imported: false,
+    required: false,
+    namespace: undefined as string | undefined,
+  }
+
   let importStatementCount = 0
   let requireCallExpressionCount = 0
 
   const lines = code.split('\n')
 
-  const markLibUsed = (): void => {
-    libUsed = true
-  }
-
   let sourceTexts = [] as SourceTextWithContext[]
-
   const addStaticText = (node: t.Node, text: string): void => {
     sourceTexts.push(toStaticText(node, text, filePath, lines))
   }
@@ -187,41 +239,33 @@ export const wrapCode = (
           }
 
           case 'ImportDeclaration': {
-            // 记录import数量
             importStatementCount++
 
             if (node.source.value === LIB_MODULE) {
-              markLibUsed()
-              // 去掉 import 语句，后面重新添加
-              path.remove()
+              libImportStatus.imported = true
             }
-
             break
           }
 
           case 'CallExpression': {
             if (t.isIdentifier(node.callee)) {
-              // 记录require数量
               if (node.callee.name === 'require') {
                 requireCallExpressionCount++
               }
 
-              // 清除 a18n 定义
               const isRequireLibModule =
                 node.callee.name === 'require' &&
                 fromStringLiteral(node.arguments[0]) === LIB_MODULE
+              if (isRequireLibModule) {
+                libImportStatus.required = true
+              }
+
               const isDefineLib = node.callee.name === LIB_FACTORY_IDENTIFIER
-              if (isRequireLibModule || isDefineLib) {
-                markLibUsed()
-                const parent = path.findParent((path) =>
-                  t.isVariableDeclaration(path.node),
-                )
-                if (parent) {
-                  parent.remove()
-                }
+              if (isDefineLib) {
+                const namespace = fromStringLiteral(node.arguments[0])
+                libImportStatus.namespace = namespace
               }
             }
-
             break
           }
 
@@ -234,24 +278,37 @@ export const wrapCode = (
     },
   })
 
-  let output: string = code
-  if (!checkOnly) {
-    output = print(ast)
-
-    if (libUsed) {
-      const shouldUseImport = importStatementCount >= requireCallExpressionCount
-      const importDeclarators = namespace
-        ? `{ ${LIB_FACTORY_IDENTIFIER} }`
-        : LIB_IDENTIFIER
-      const importStatement = shouldUseImport
-        ? `import ${importDeclarators} from '${LIB_MODULE}'\n`
-        : `const ${importDeclarators} = require('${LIB_MODULE}')\n`
-      const factoryStatement = namespace
-        ? `const a18n = ${LIB_FACTORY_IDENTIFIER}('${namespace}')\n`
-        : ''
-      output = importStatement + factoryStatement + output
+  if (checkOnly || !libUsed) {
+    return {
+      output: code,
+      sourceTexts,
     }
   }
+
+  let output: string
+  if (
+    (libImportStatus.imported || libImportStatus.required) &&
+    libImportStatus.namespace == namespace
+  ) {
+    output = print(ast)
+  } else {
+    removeImportRequireFactory(ast, lines)
+    output = print(ast)
+
+    const shouldUseImport = importStatementCount >= requireCallExpressionCount
+
+    const importDeclarators = namespace
+      ? `{ ${LIB_FACTORY_IDENTIFIER} }`
+      : LIB_IDENTIFIER
+    const importStatement = shouldUseImport
+      ? `import ${importDeclarators} from '${LIB_MODULE}'\n`
+      : `const ${importDeclarators} = require('${LIB_MODULE}')\n`
+    const factoryStatement = namespace
+      ? `const a18n = ${LIB_FACTORY_IDENTIFIER}('${namespace}')\n`
+      : ''
+    output = importStatement + factoryStatement + output
+  }
+
   return {
     output,
     sourceTexts,
