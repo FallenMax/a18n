@@ -73,20 +73,6 @@ export const extractCode = (
     sourceTexts.push(toDynamicText(node, parts, filePath, lines))
   }
 
-  const invariant = (condition: any, node: t.Node, message: string) => {
-    if (!condition) {
-      throw new Error(
-        `${filePath}${
-          node.loc
-            ? ':' + node.loc.start.line + ':' + node.loc.start.column
-            : ''
-        }` +
-          ' ' +
-          message,
-      )
-    }
-  }
-
   traverse(ast, {
     enter(path) {
       const node = path.node
@@ -97,29 +83,21 @@ export const extractCode = (
             t.isIdentifier(node.callee) &&
             node.callee.name === LIB_IDENTIFIER
           ) {
-            switch (node.arguments.length) {
-              case 1: {
-                const arg0 = node.arguments[0]
-                const text = fromStringLiteral(arg0)
-                invariant(
-                  text != null,
-                  node,
-                  `${LIB_IDENTIFIER}() has signature: a18n(text:string), instead received: ${node.arguments.map(
-                    (a) => a.type,
-                  )}`,
-                )
-                addStaticText(node, text!)
-                break
-              }
-              default: {
-                invariant(
-                  false,
-                  node,
-                  `export ${LIB_IDENTIFIER}() has signature: a18n(text:string), instead received: ${node.arguments.map(
-                    (a) => a.type,
-                  )}`,
-                )
-              }
+            const arg0 = node.arguments[0]
+            const text = fromStringLiteral(arg0)
+            if (text != null) {
+              addStaticText(node, text!)
+            } else {
+              const line = `${filePath}${
+                node.loc
+                  ? ':' + node.loc.start.line + ':' + node.loc.start.column
+                  : ''
+              }\n`
+              console.warn(
+                `WARNING: \n`,
+                `You should call a18n() with string literal, e.g. a18n("hello"), not a18n(greeting): \n`,
+                `file: ${line}`,
+              )
             }
           }
           break

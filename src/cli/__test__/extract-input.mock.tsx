@@ -20,7 +20,7 @@ const s15_1 = (
 const r = null as any
 const r1 = { ...{}, ...{} }
 
-// decorator语法
+// decorator syntax
 @connect()
 class SomeComponent extends React.Component {
   doStuff = () => {}
@@ -29,8 +29,12 @@ class SomeComponent extends React.Component {
   }
 }
 
-// nullish coalescing语法
+// nullish coalescing syntax
 const temp = s3 ?? s10
 
-// optional chaining语法
+// optional chaining syntax
 const temp2 = (s3 as any)?.y?.z
+
+// a18n(variable) should only produce warning instead of error
+const someVar = 'abc'
+const temp3 = a18n(someVar)
