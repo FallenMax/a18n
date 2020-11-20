@@ -3,9 +3,6 @@ import { clearCompileCache, compile, DEBUG_getCompileCache } from './translator'
 
 //-------------- Types --------------
 
-export { LocaleResource } from '../types'
-export { getA18n }
-
 export interface A18n {
   /**
    * translate static text
@@ -172,10 +169,9 @@ const create = (): A18n => {
     clearCompileCache()
 
     if (!resetSelfOnly) {
-      const instances = [
-        ...Object.values(globalInstances),
-        ...Object.values(localInstances),
-      ]
+      const instances = ([] as A18n[])
+        .concat(Object.values(globalInstances))
+        .concat(Object.values(localInstances))
       instances.forEach((instance) => {
         if (instance !== a18n) {
           instance.DEBUG_reset(true)
@@ -200,6 +196,6 @@ const create = (): A18n => {
 
 const a18n = (localInstances[DEFAULT_NAMESPACE] = create())
 
-module.exports = a18n
-
 export default a18n
+export { LocaleResource } from '../types'
+export { a18n, getA18n }
