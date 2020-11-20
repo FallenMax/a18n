@@ -1,4 +1,4 @@
-const a18n = require('..')
+const a18n = window.a18n.default
 
 a18n.addLocaleResource('en', {
   source: 'target',
@@ -8,7 +8,7 @@ a18n.setLocale('en')
 
 const translateDynamicText = (count) => {
   let realMs, refMs
-  // ref  implementation
+  // reference  implementation
   {
     let b18n = () => 'a3b1c'
     let found = 0
@@ -21,7 +21,7 @@ const translateDynamicText = (count) => {
     refMs = Date.now() - start
   }
 
-  // real
+  // real implementation
   {
     let found = 0
     let start = Date.now()
@@ -64,35 +64,30 @@ const translateStaticText = (count) => {
   return [realMs, refMs]
 }
 
-if (typeof window !== 'undefined') {
-  const $ = (str) => document.querySelector(str)
-  const avg = (numbers) => {
-    return numbers.reduce((a, b) => a + b, 0) / numbers.length
-  }
-  window.translateStaticText = () => {
-    let count = $('#static_text_count').value
-    const times = Array(10)
-      .fill(0)
-      .map(() => translateStaticText(count))
-    const realMs = avg(times.map(([real]) => real))
-    const refMs = avg(times.map(([, ref]) => ref))
-    $('#static_text_time_ref').textContent = refMs
-    $('#static_text_time').textContent = realMs
-  }
-  window.translateDynamicText = () => {
-    let count = $('#dynamic_text_count').value
-    const times = Array(10)
-      .fill(0)
-      .map(() => translateDynamicText(count))
-    const realMs = avg(times.map(([real]) => real))
-    const refMs = avg(times.map(([, ref]) => ref))
-    $('#dynamic_text_time_ref').textContent = refMs
-    $('#dynamic_text_time').textContent = realMs
-  }
-
-  const tests = [window.translateStaticText, window.translateDynamicText]
-  tests.forEach((test) => test())
-} else {
-  console.log('static:', translateStaticText(1000000))
-  console.log('dynamic:', translateDynamicText(1000000))
+const $ = (str) => document.querySelector(str)
+const avg = (numbers) => {
+  return numbers.reduce((a, b) => a + b, 0) / numbers.length
 }
+window.translateStaticText = () => {
+  let count = $('#static_text_count').value
+  const times = Array(10)
+    .fill(0)
+    .map(() => translateStaticText(count))
+  const realMs = avg(times.map(([real]) => real))
+  const refMs = avg(times.map(([, ref]) => ref))
+  $('#static_text_time_ref').textContent = refMs
+  $('#static_text_time').textContent = realMs
+}
+window.translateDynamicText = () => {
+  let count = $('#dynamic_text_count').value
+  const times = Array(10)
+    .fill(0)
+    .map(() => translateDynamicText(count))
+  const realMs = avg(times.map(([real]) => real))
+  const refMs = avg(times.map(([, ref]) => ref))
+  $('#dynamic_text_time_ref').textContent = refMs
+  $('#dynamic_text_time').textContent = realMs
+}
+
+const tests = [window.translateStaticText, window.translateDynamicText]
+tests.forEach((test) => test())

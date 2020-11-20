@@ -39,7 +39,9 @@
       <!-- static translation -->
       <tr>
         <td>
-          <button onclick="translateStaticText()">translate static text</button>
+          <button onclick="window.translateStaticText()">
+            translate static text
+          </button>
         </td>
         <td><input type="number" value="1000000" id="static_text_count" /></td>
         <td id="static_text_time"></td>
@@ -49,7 +51,7 @@
       <!-- dynamic translation -->
       <tr>
         <td>
-          <button onclick="translateDynamicText()">
+          <button onclick="window.translateDynamicText()">
             translate dynamic text
           </button>
         </td>
@@ -58,6 +60,8 @@
         <td id="dynamic_text_time_ref"></td>
       </tr>
     </table>
+
+    <script src="../dist/a18n.min.js"></script>
     <script src="./index.js"></script>
   </body>
 </html>
