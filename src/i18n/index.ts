@@ -196,6 +196,8 @@ const create = (): A18n => {
 
 const a18n = (localInstances[DEFAULT_NAMESPACE] = create())
 
+module.exports = a18n
+
 export default a18n
 export { LocaleResource } from '../types'
-export { a18n, getA18n }
+export { getA18n }
