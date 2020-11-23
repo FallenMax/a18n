@@ -1,7 +1,6 @@
 import JestWorker from 'jest-worker'
 import * as os from 'os'
 import parallelMap from 'p-map'
-import { getFiles, isSourceCode } from './file'
 import { keepTruthy } from './keep_truthty'
 
 export const processFiles = async <
@@ -20,14 +19,11 @@ export const processFiles = async <
   },
   Result = ReturnType<Worker[FuncName]>
 >(
-  fileGlob: string,
+  files: string[],
   processorPath: string,
   processFunction: FuncName,
   params: Params,
 ): Promise<Result[]> => {
-  const files = getFiles(fileGlob, { exclude: params.exclude }).filter(
-    isSourceCode,
-  )
   const worker = new JestWorker(processorPath, {
     exposedMethods: [processFunction as string],
     maxRetries: 0,
