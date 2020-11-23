@@ -44,14 +44,24 @@ export const exporters = {
 
 export const createResource = (
   sourceTexts: SourceTextWithContext[],
-  existed?: LocaleResource,
+  existed: LocaleResource,
+  keepUnused?: boolean,
 ): LocaleResourceExtracted => {
-  const resource = {} as LocaleResourceExtracted
+  let resource = {} as LocaleResourceExtracted
+  if (keepUnused) {
+    Object.keys(existed).forEach((key) => {
+      resource[key] = {
+        value: (existed && existed[key]) ?? null,
+        contexts: [],
+      }
+    })
+  }
+
   sourceTexts.forEach((sourceText) => {
     const key = sourceTextToKey(sourceText)
     if (!resource[key]) {
       resource[key] = {
-        value: (existed && existed[key]) || null,
+        value: (existed && existed[key]) ?? null,
         contexts: [sourceText.context],
       }
     } else {
@@ -68,6 +78,7 @@ export const extract = async (
     locales: string[]
     exclude?: string
     silent?: boolean
+    keepUnused?: boolean
   },
 ) => {
   const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
@@ -102,7 +113,11 @@ export const extract = async (
   mkdirp.sync(params.localeRoot)
   params.locales.forEach((locale) => {
     const existingResource = getExsitingResource(locale)
-    const nextResource = createResource(sourceTexts, existingResource)
+    const nextResource = createResource(
+      sourceTexts,
+      existingResource,
+      params.keepUnused,
+    )
     const filePath = join(params.localeRoot, `${locale}.json`)
     const fileContent = exporters.json(nextResource, locale)
     writeFile(filePath, fileContent)

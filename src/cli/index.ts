@@ -14,7 +14,14 @@ const args = parseArgs(process.argv.slice(2), {
     help: ['h'],
   },
   string: [''],
-  boolean: ['write', 'silent', 'skip-wrap', 'skip-extract', 'skip-resource'],
+  boolean: [
+    'write',
+    'silent',
+    'skip-wrap',
+    'skip-extract',
+    'skip-resource',
+    'keep-unused',
+  ],
 })
 const [command, ...restArgs] = args._
 
@@ -28,14 +35,15 @@ DESCRIPTION
   Modify code files under <path>, wrap 'string_literal' and \`template\${string}\` with default translate function 'a18n("string_literal")' or 'a18n\`template\${string}\`'
 
 OPTIONS:
-  '<path>'：required，code directory to be traversed
-  '--write'：
+  '<path>':
+    required, code directory to be traversed
+  '--write':
     optional, write files in place. if not provided, a18n will perform a dry run and print files to be modified
-  '--namespace'：
+  '--namespace':
     optional, a name that uniquely identifies current project, this helps avoid resource conflicting with other dependencies that also uses "a18n"
-  '--exclude'：
+  '--exclude':
     optional, directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
-  '--silent'：
+  '--silent':
     optional, do not print files being processed (this will be ignored when '--write' is not present)
 
 NOTE:
@@ -72,10 +80,15 @@ DESCRIPTION
   Traverse code files under <path>, extract texts to be translated (which are wrapped in 'a18n()/a18n\`\`') to <localeRoot> directory.
 
 OPTIONS:
-  '<path>'：required，code directory to be traversed
-  '<localeRoot'>: required, directory to store locale resource files
-  '--locales': optional, languages to be exported, separated by comma. example: 'da,de-AT,de-CH,de-DE'
-  '--silent'：
+  '<path>':
+    required, code directory to be traversed
+  '<localeRoot'>:
+    required, directory to store locale resource files
+  '--locales':
+    optional, languages to be exported, separated by comma. example: 'da,de-AT,de-CH,de-DE'
+  '--keep-unused':
+    optional, keep unused texts/translations even if they are not found in code being extracted.
+  '--silent':
     optional, do not print files being processed
 `,
     )
@@ -97,6 +110,7 @@ OPTIONS:
       : DEFAULT_LOCALES,
     exclude: args.exclude,
     silent: args.silent,
+    keepUnused: args['keep-unused'],
   })
 }
 
@@ -110,12 +124,13 @@ DESCRIPTION
   This command will traverse code files in <path> directory, remove 'a18n()/a18n\`\`' translation calls and import statements
 
 OPTIONS:
-  '<path>'：required，code directory to be traversed
-  '--write'：
+  '<path>':
+    required, code directory to be traversed
+  '--write':
     optional, write files in place. if not provided, a18n will perform a dry run and print files to be modified
-  '--exclude'：
+  '--exclude':
     optional, directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
-  '--silent'：
+  '--silent':
     optional, do not print files being processed (this will be ignored when '--write' is not present)
 
 NOTE:
@@ -156,13 +171,13 @@ DESCRIPTION
   - any incorrect translation calls and syntax errors found in the process
 
 OPTIONS:
-  '<path>'：required，code directory to be traversed
+  '<path>': required, code directory to be traversed
   '<localeRoot'>: required, directory to store locale resource files
-  '--locales=<localeRoot>'：specify locales to check, by default all locale files under <localeRoot> are checked
-  '--skip-wrap'：do not check for unwrapped texts
-  '--skip-extract'：do not check for unextracted texts
-  '--skip-resource'：do not check for missing translation
-  '--exclude'：
+  '--locales=<localeRoot>': specify locales to check, by default all locale files under <localeRoot> are checked
+  '--skip-wrap': do not check for unwrapped texts
+  '--skip-extract': do not check for unextracted texts
+  '--skip-resource': do not check for missing translation
+  '--exclude':
     optional, directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
 `,
     )
