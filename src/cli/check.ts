@@ -5,7 +5,7 @@ import { LocaleResource } from '../types'
 import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
 import { ExitCode } from './util/exit_code'
-import { isExist, readFile } from './util/file'
+import { getFiles, isExist, isSourceCode, readFile } from './util/file'
 import { flatten } from './util/flatten'
 import { keepTruthy } from './util/keep_truthty'
 import { processFiles } from './util/process_file'
@@ -101,8 +101,10 @@ const checkWrap = async (
   process.stdout.write(
     chalk.yellow.bold`\nChecking for unwrapped texts in code ... `,
   )
+
+  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
   const results = await processFiles<typeof TsxWrapper, 'wrapFile'>(
-    path,
+    files,
     wrapperPath,
     'wrapFile',
     {
@@ -151,8 +153,9 @@ const checkExtract = async (
   process.stdout.write(
     chalk.yellow.bold`\nChecking for unextracted texts in code ... `,
   )
+  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
   const results = await processFiles<typeof TsxExtractor, 'extractFile'>(
-    path,
+    files,
     extractorPath,
     'extractFile',
     params,

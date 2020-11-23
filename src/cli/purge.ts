@@ -1,4 +1,5 @@
 import type * as TsxPurger from './purge/tsx-purger'
+import { getFiles, isSourceCode } from './util/file'
 import { processFiles } from './util/process_file'
 const purgerPath = require.resolve('./purge/tsx-purger')
 
@@ -18,8 +19,10 @@ export const purge = async (
     console.info(`---`)
   }
 
+  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
+
   await processFiles<typeof TsxPurger, 'purgeFile'>(
-    path,
+    files,
     purgerPath,
     'purgeFile',
     params,

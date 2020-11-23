@@ -7,7 +7,13 @@ import {
 } from '../types'
 import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
-import { isExist, readFile, writeFile } from './util/file'
+import {
+  getFiles,
+  isExist,
+  isSourceCode,
+  readFile,
+  writeFile,
+} from './util/file'
 import { flatten } from './util/flatten'
 import { keepTruthy } from './util/keep_truthty'
 import { processFiles } from './util/process_file'
@@ -38,14 +44,24 @@ export const exporters = {
 
 export const createResource = (
   sourceTexts: SourceTextWithContext[],
-  existed?: LocaleResource,
+  existed: LocaleResource,
+  keepUnused?: boolean,
 ): LocaleResourceExtracted => {
-  const resource = {} as LocaleResourceExtracted
+  let resource = {} as LocaleResourceExtracted
+  if (keepUnused) {
+    Object.keys(existed).forEach((key) => {
+      resource[key] = {
+        value: (existed && existed[key]) ?? null,
+        contexts: [],
+      }
+    })
+  }
+
   sourceTexts.forEach((sourceText) => {
     const key = sourceTextToKey(sourceText)
     if (!resource[key]) {
       resource[key] = {
-        value: (existed && existed[key]) || null,
+        value: (existed && existed[key]) ?? null,
         contexts: [sourceText.context],
       }
     } else {
@@ -62,10 +78,13 @@ export const extract = async (
     locales: string[]
     exclude?: string
     silent?: boolean
+    keepUnused?: boolean
   },
 ) => {
+  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
+
   const results = await processFiles<typeof TsxExtractor, 'extractFile'>(
-    path,
+    files,
     extractorPath,
     'extractFile',
     params,
@@ -94,7 +113,11 @@ export const extract = async (
   mkdirp.sync(params.localeRoot)
   params.locales.forEach((locale) => {
     const existingResource = getExsitingResource(locale)
-    const nextResource = createResource(sourceTexts, existingResource)
+    const nextResource = createResource(
+      sourceTexts,
+      existingResource,
+      params.keepUnused,
+    )
     const filePath = join(params.localeRoot, `${locale}.json`)
     const fileContent = exporters.json(nextResource, locale)
     writeFile(filePath, fileContent)
