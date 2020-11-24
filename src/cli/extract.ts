@@ -9,7 +9,7 @@ import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
 import {
   getFiles,
-  isExist,
+  isFile,
   isSourceCode,
   readFile,
   writeFile,
@@ -103,7 +103,7 @@ export const extract = async (
   const getExsitingResource = (locale: string): LocaleResource => {
     const empty = {} as LocaleResource
     const filePath = join(params.localeRoot, `${locale}.json`)
-    if (isExist(filePath)) {
+    if (isFile(filePath)) {
       const resource = importers.json(readFile(filePath))
       Object.assign(empty, resource)
     }

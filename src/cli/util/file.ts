@@ -6,50 +6,83 @@ export const isSourceCode = (filePath: any): boolean => {
   return /\.(js|ts)x?$/.test(filePath)
 }
 
-export const isValidPath = (path: string): boolean => {
+export const isDirectory = (path: string): boolean => {
   try {
-    return isExist(path)
+    const stat = statSync(path)
+    return stat.isDirectory()
   } catch (error) {
+    return false
+  }
+}
+export const toAbsolutePath = (path: string): string => {
+  return path.startsWith('/') ? path : resolve(process.cwd(), path)
+}
+
+export const isFile = (path: string) => {
+  try {
+    return statSync(path).isFile()
+  } catch (e) {
     return false
   }
 }
 
 export const getFiles = (
-  dir: string,
+  /** file/dir/glob */
+  paths: string,
   options: { exclude?: string } = {},
 ): string[] => {
-  const gitIgnoreFile = resolve(dir, './.gitignore')
-
-  let gitIgnore = [] as string[]
-
-  if (isExist(gitIgnoreFile)) {
-    gitIgnore = readFile(gitIgnoreFile)
-      .split('\n')
-      .filter(Boolean)
-      .map((rule) => rule.replace(/^\//, './'))
-  }
-
   const extraIgnore = options.exclude ? options.exclude.split(',') : []
 
-  const files = glob
-    .sync('./**/*.*', {
-      cwd: dir,
-      ignore: gitIgnore.concat(extraIgnore),
-      onlyFiles: true,
-    })
-    .map((reletivePath: any) => {
-      return resolve(dir, reletivePath as string)
-    })
-  return files
+  let files: string[] = []
+  paths.split(',').forEach((path) => {
+    const absolutePath = toAbsolutePath(path)
+    if (isFile(absolutePath)) {
+      files.push(absolutePath)
+    } else if (isDirectory(absolutePath)) {
+      const gitIgnoreFile = resolve(absolutePath, '.gitignore')
+      let gitIgnore = [] as string[]
+      if (isFile(gitIgnoreFile)) {
+        gitIgnore = readFile(gitIgnoreFile)
+          .split('\n')
+          .filter(Boolean)
+          .map((rule) => rule.replace(/^\//, './'))
+      }
+      const ignore = gitIgnore.concat(extraIgnore)
+
+      const filesInDir = glob.sync('**/*.*', {
+        cwd: absolutePath,
+        ignore,
+        onlyFiles: true,
+        absolute: true,
+      })
+      files.push(...filesInDir)
+    } else {
+      const gitIgnoreFile = resolve(process.cwd(), '.gitignore')
+      let gitIgnore = [] as string[]
+      if (isFile(gitIgnoreFile)) {
+        gitIgnore = readFile(gitIgnoreFile)
+          .split('\n')
+          .filter(Boolean)
+          .map((rule) => rule.replace(/^\//, './'))
+      }
+      const ignore = gitIgnore.concat(extraIgnore)
+
+      const globFiles = glob.sync(path, {
+        ignore,
+        onlyFiles: true,
+        absolute: true,
+      })
+      files.push(...globFiles)
+    }
+  })
+
+  return dedupe(files).sort()
 }
 
-export const isExist = (path: string) => {
-  try {
-    statSync(path)
-    return true
-  } catch (e) {
-    return false
-  }
+const dedupe = (texts: string[]) => {
+  let o = Object.create(null)
+  texts.forEach((t) => (o[t] = true))
+  return Object.keys(o)
 }
 
 export const readFile = (path: string) => {

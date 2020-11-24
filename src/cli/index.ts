@@ -5,7 +5,7 @@ import { DEFAULT_LOCALES } from './constants'
 import { extract } from './extract'
 import { purge } from './purge'
 import { ExitCode } from './util/exit_code'
-import { isValidPath } from './util/file'
+import { isDirectory } from './util/file'
 import { wrap } from './wrap'
 import assert = require('assert')
 
@@ -32,19 +32,19 @@ const handleWrap = async () => {
       `a18n wrap <path> --write [<options>]
 
 DESCRIPTION
-  Modify code files under <path>, wrap 'string_literal' and \`template\${string}\` with default translate function 'a18n("string_literal")' or 'a18n\`template\${string}\`'
+  Modify code files from given <path>, wrap 'string_literal' and \`template\${string}\` with default translate function 'a18n("string_literal")' or 'a18n\`template\${string}\`'
 
 OPTIONS:
   '<path>':
-    required, code directory to be traversed
+    file/dir/glob, code files to be processed. multiple entries are seperated by comma
   '--write':
-    optional, write files in place. if not provided, a18n will perform a dry run and print files to be modified
+    write files in place. if not provided, a18n will perform a dry run and print files to be modified
   '--namespace':
-    optional, a name that uniquely identifies current project, this helps avoid resource conflicting with other dependencies that also uses "a18n"
+    a name that uniquely identifies current project, this helps avoid resource conflicting with other dependencies that also uses "a18n"
   '--exclude':
-    optional, directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':
-    optional, do not print files being processed (this will be ignored when '--write' is not present)
+    do not print files being processed (this will be ignored when '--write' is not present)
 
 NOTE:
   only .js, .ts, .jsx, .tsx files are supported.
@@ -54,12 +54,7 @@ NOTE:
     )
     return
   }
-  const absolutePath = resolve(process.cwd(), path)
-  assert(isValidPath(absolutePath), `Invalid path: ${path}`)
   if (!args.write && args.silent) {
-    console.warn(
-      `'--silent=true' is ignored, it only take effect when '--write' is present.`,
-    )
     args.silent = false
   }
   await wrap(path, {
@@ -77,28 +72,29 @@ const handleExtract = async () => {
       `a18n extract <path> <localeRoot> [<options>]
 
 DESCRIPTION
-  Traverse code files under <path>, extract texts to be translated (which are wrapped in 'a18n()/a18n\`\`') to <localeRoot> directory.
+  Parse code files from given <path>, extract texts to be translated (which are wrapped in 'a18n()/a18n\`\`') to <localeRoot> directory.
 
 OPTIONS:
   '<path>':
-    required, code directory to be traversed
+    file/dir/glob, code files to be processed. multiple entries are seperated by comma
   '<localeRoot'>:
-    required, directory to store locale resource files
+    directory to store locale resource files
   '--locales':
-    optional, languages to be exported, separated by comma. example: 'da,de-AT,de-CH,de-DE'
+    languages to be exported, separated by comma. example: 'da,de-AT,de-CH,de-DE'
   '--keep-unused':
-    optional, keep unused texts/translations even if they are not found in code being extracted.
+    keep unused texts/translations even if they are not found in code being extracted.
   '--silent':
-    optional, do not print files being processed
+    do not print files being processed
 `,
     )
     return
   }
 
-  const absolutePath = resolve(process.cwd(), path)
   const absoluteLocaleRoot = resolve(process.cwd(), localeRoot)
-  assert(isValidPath(absolutePath), `Invalid path: ${path}`)
-  assert(isValidPath(absoluteLocaleRoot), `Invalid path: ${localeRoot}`)
+  assert(
+    isDirectory(absoluteLocaleRoot),
+    `locale root is not a directory: ${localeRoot}`,
+  )
 
   await extract(path, {
     localeRoot: absoluteLocaleRoot,
@@ -121,17 +117,17 @@ const handlePurge = async () => {
       `a18n purge <path> --write [<options>]
 
 DESCRIPTION
-  This command will traverse code files in <path> directory, remove 'a18n()/a18n\`\`' translation calls and import statements
+  Modify code files from given <path>, remove 'a18n()/a18n\`\`' translation calls and import statements
 
 OPTIONS:
   '<path>':
-    required, code directory to be traversed
+    file/dir/glob, code files to be processed. multiple entries are seperated by comma
   '--write':
-    optional, write files in place. if not provided, a18n will perform a dry run and print files to be modified
+    write files in place. if not provided, a18n will perform a dry run and print files to be modified
   '--exclude':
-    optional, directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':
-    optional, do not print files being processed (this will be ignored when '--write' is not present)
+    do not print files being processed (this will be ignored when '--write' is not present)
 
 NOTE:
   Only .js, .ts, .jsx, .tsx files are supported.
@@ -146,8 +142,6 @@ NOTE:
     )
     args.silent = false
   }
-  const absolutePath = resolve(process.cwd(), path)
-  assert(isValidPath(absolutePath), `Invalid path: ${path}`)
   await purge(path, {
     write: args.write,
     exclude: args.exclude,
@@ -163,7 +157,8 @@ const handleCheck = async () => {
       `a18n check <path> <localeRoot> [<options>]
 
 DESCRIPTION
-  Check for untranslated texts. If any, print and exit with error code.
+  Analyze code files from given <path> and translated texts at <localeRoot>, check for untranslated texts.
+  If any, print and exit with error code.
 
   These types of "missing translation" will be checked:
   - texts in code that are not wrapped as expected
@@ -172,23 +167,30 @@ DESCRIPTION
   - any incorrect translation calls and syntax errors found in the process
 
 OPTIONS:
-  '<path>': required, code directory to be traversed
-  '<localeRoot'>: required, directory to store locale resource files
-  '--locales=<localeRoot>': specify locales to check, by default all locale files under <localeRoot> are checked
-  '--skip-wrap': do not check for unwrapped texts
-  '--skip-extract': do not check for unextracted texts
-  '--skip-resource': do not check for missing translation
+  '<path>':
+    file/dir/glob, code files to be processed. multiple entries are seperated by comma
+  '<localeRoot'>:
+    directory to store locale resource files
+  '--locales=<localeRoot>':
+    specify locales to check, by default all locale files under <localeRoot> are checked
+  '--skip-wrap':
+    do not check for unwrapped texts
+  '--skip-extract':
+    do not check for unextracted texts
+  '--skip-resource':
+    do not check for missing translation
   '--exclude':
-    optional, directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
 `,
     )
     return
   }
 
-  const absolutePath = resolve(process.cwd(), path)
   const absoluteLocaleRoot = resolve(process.cwd(), localeRoot)
-  assert(isValidPath(absolutePath), 'invalid path')
-  assert(isValidPath(absoluteLocaleRoot), `Invalid path: ${localeRoot}`)
+  assert(
+    isDirectory(absoluteLocaleRoot),
+    `locale root is not a directory: ${localeRoot}`,
+  )
 
   await check(path, {
     localeRoot: absoluteLocaleRoot,

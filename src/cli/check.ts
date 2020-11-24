@@ -5,7 +5,7 @@ import { LocaleResource } from '../types'
 import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
 import { ExitCode } from './util/exit_code'
-import { getFiles, isExist, isSourceCode, readFile } from './util/file'
+import { getFiles, isFile, isSourceCode, readFile } from './util/file'
 import { flatten } from './util/flatten'
 import { keepTruthy } from './util/keep_truthty'
 import { processFiles } from './util/process_file'
@@ -38,7 +38,7 @@ const getExistingResources = (
   locale: string,
 ): LocaleResource => {
   const filePath = join(localeRoot, `${locale}.json`)
-  if (isExist(filePath)) {
+  if (isFile(filePath)) {
     return importers.json(readFile(filePath))
   } else {
     return {}
