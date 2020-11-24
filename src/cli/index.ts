@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import parseArgs from 'yargs-parser'
 import { check } from './check'
@@ -5,7 +6,7 @@ import { DEFAULT_LOCALES } from './constants'
 import { extract } from './extract'
 import { purge } from './purge'
 import { ExitCode } from './util/exit_code'
-import { isDirectory } from './util/file'
+import { getFiles, isDirectory, isSourceCode } from './util/file'
 import { wrap } from './wrap'
 import assert = require('assert')
 
@@ -24,15 +25,31 @@ const args = parseArgs(process.argv.slice(2), {
   ],
 })
 const [command, ...restArgs] = args._
+const isTTY = process.stdin.isTTY
+
+const getFileList = (path: string | undefined): string[] | undefined => {
+  if (path) {
+    return getFiles(path, { exclude: args.exclude }).filter(isSourceCode)
+  }
+  return !isTTY
+    ? readFileSync(0, 'utf-8')
+        .split('\n')
+        .filter(Boolean)
+        .map((f) => f.trim())
+    : undefined
+}
 
 const handleWrap = async () => {
   const [path] = restArgs
-  if (args.help || !path) {
+  const files = getFileList(path)
+
+  if (args.help || !files) {
     console.info(
       `a18n wrap <path> --write [<options>]
 
 DESCRIPTION
   Modify code files from given <path>, wrap 'string_literal' and \`template\${string}\` with default translate function 'a18n("string_literal")' or 'a18n\`template\${string}\`'
+  Stdin is read as file list if it is piped to a18n and no <path> is given.
 
 OPTIONS:
   '<path>':
@@ -57,7 +74,7 @@ NOTE:
   if (!args.write && args.silent) {
     args.silent = false
   }
-  await wrap(path, {
+  await wrap(files, {
     write: args.write,
     exclude: args.exclude,
     namespace: args.namespace,
@@ -66,13 +83,21 @@ NOTE:
 }
 
 const handleExtract = async () => {
-  const [path, localeRoot] = restArgs
-  if (args.help || !path || !localeRoot) {
+  let [path /* optional */, localeRoot] = restArgs
+  let files: string[] | undefined
+  if (path && localeRoot) {
+    files = getFileList(path)
+  } else if (path) {
+    localeRoot = path
+    files = getFileList(undefined)
+  }
+  if (args.help || !files || !localeRoot) {
     console.info(
       `a18n extract <path> <localeRoot> [<options>]
 
 DESCRIPTION
   Parse code files from given <path>, extract texts to be translated (which are wrapped in 'a18n()/a18n\`\`') to <localeRoot> directory.
+  Stdin is read as file list if it is piped to a18n and no <path> is given.
 
 OPTIONS:
   '<path>':
@@ -96,7 +121,7 @@ OPTIONS:
     `locale root is not a directory: ${localeRoot}`,
   )
 
-  await extract(path, {
+  await extract(files, {
     localeRoot: absoluteLocaleRoot,
     locales: args.locales
       ? (args.locales as string)
@@ -112,12 +137,14 @@ OPTIONS:
 
 const handlePurge = async () => {
   const [path] = restArgs
-  if (args.help || !path) {
+  const files = getFileList(path)
+  if (args.help || !files) {
     console.info(
       `a18n purge <path> --write [<options>]
 
 DESCRIPTION
   Modify code files from given <path>, remove 'a18n()/a18n\`\`' translation calls and import statements
+  Stdin is read as file list if it is piped to a18n and no <path> is given.
 
 OPTIONS:
   '<path>':
@@ -142,7 +169,7 @@ NOTE:
     )
     args.silent = false
   }
-  await purge(path, {
+  await purge(files, {
     write: args.write,
     exclude: args.exclude,
     namespace: args.namespace,
@@ -151,14 +178,22 @@ NOTE:
 }
 
 const handleCheck = async () => {
-  const [path, localeRoot] = restArgs
-  if (args.help || !path || !localeRoot) {
+  let [path /* optional */, localeRoot] = restArgs
+  let files: string[] | undefined
+  if (path && localeRoot) {
+    files = getFileList(path)
+  } else if (path) {
+    localeRoot = path
+    files = getFileList(undefined)
+  }
+  if (args.help || !files || !localeRoot) {
     console.info(
       `a18n check <path> <localeRoot> [<options>]
 
 DESCRIPTION
   Analyze code files from given <path> and translated texts at <localeRoot>, check for untranslated texts.
   If any, print and exit with error code.
+  Stdin is read as file list if it is piped to a18n and no <path> is given.
 
   These types of "missing translation" will be checked:
   - texts in code that are not wrapped as expected
@@ -192,7 +227,7 @@ OPTIONS:
     `locale root is not a directory: ${localeRoot}`,
   )
 
-  await check(path, {
+  await check(files, {
     localeRoot: absoluteLocaleRoot,
     locales: args.locales
       ? (args.locales as string)

@@ -1,10 +1,9 @@
-import { getFiles, isSourceCode } from './util/file'
 import { processFiles } from './util/process_file'
 import type * as TsxWrapper from './wrap/tsx-wrapper'
 const wrapperPath = require.resolve('./wrap/tsx-wrapper')
 
 export const wrap = async (
-  path: string,
+  files: string[],
   params: {
     write: boolean
     exclude?: string
@@ -18,8 +17,6 @@ export const wrap = async (
     )
     console.warn(`---`)
   }
-
-  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
 
   await processFiles<typeof TsxWrapper, 'wrapFile'>(
     files,

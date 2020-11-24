@@ -5,7 +5,7 @@ import { LocaleResource } from '../types'
 import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
 import { ExitCode } from './util/exit_code'
-import { getFiles, isFile, isSourceCode, readFile } from './util/file'
+import { isFile, readFile } from './util/file'
 import { flatten } from './util/flatten'
 import { keepTruthy } from './util/keep_truthty'
 import { processFiles } from './util/process_file'
@@ -95,14 +95,13 @@ export type CheckParams = {
 }
 
 const checkWrap = async (
-  path: string,
+  files: string[],
   params: CheckParams,
 ): Promise<boolean> => {
   process.stdout.write(
     chalk.yellow.bold`\nChecking for unwrapped texts in code ... `,
   )
 
-  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
   const results = await processFiles<typeof TsxWrapper, 'wrapFile'>(
     files,
     wrapperPath,
@@ -147,13 +146,12 @@ const checkWrap = async (
 }
 
 const checkExtract = async (
-  path: string,
+  files: string[],
   params: CheckParams,
 ): Promise<boolean> => {
   process.stdout.write(
     chalk.yellow.bold`\nChecking for unextracted texts in code ... `,
   )
-  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
   const results = await processFiles<typeof TsxExtractor, 'extractFile'>(
     files,
     extractorPath,
@@ -210,7 +208,7 @@ const checkExtract = async (
 }
 
 const checkResource = async (
-  path: string,
+  files: string[],
   params: CheckParams,
 ): Promise<boolean> => {
   process.stdout.write(
@@ -251,10 +249,10 @@ const checkResource = async (
   return !missingValue
 }
 
-export const check = async (path: string, params: CheckParams) => {
-  const wrapOk = params.skipWrap || (await checkWrap(path, params))
-  const extractOk = params.skipExtract || (await checkExtract(path, params))
-  const resourceOk = params.skipResource || (await checkResource(path, params))
+export const check = async (files: string[], params: CheckParams) => {
+  const wrapOk = params.skipWrap || (await checkWrap(files, params))
+  const extractOk = params.skipExtract || (await checkExtract(files, params))
+  const resourceOk = params.skipResource || (await checkResource(files, params))
 
   if (!(wrapOk && extractOk && resourceOk)) {
     process.exit(ExitCode.CheckError)

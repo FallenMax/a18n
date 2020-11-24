@@ -7,13 +7,7 @@ import {
 } from '../types'
 import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
-import {
-  getFiles,
-  isFile,
-  isSourceCode,
-  readFile,
-  writeFile,
-} from './util/file'
+import { isFile, readFile, writeFile } from './util/file'
 import { flatten } from './util/flatten'
 import { keepTruthy } from './util/keep_truthty'
 import { processFiles } from './util/process_file'
@@ -72,7 +66,7 @@ export const createResource = (
 }
 
 export const extract = async (
-  path: string,
+  files: string[],
   params: {
     localeRoot: string
     locales: string[]
@@ -81,8 +75,6 @@ export const extract = async (
     keepUnused?: boolean
   },
 ) => {
-  const files = getFiles(path, { exclude: params.exclude }).filter(isSourceCode)
-
   const results = await processFiles<typeof TsxExtractor, 'extractFile'>(
     files,
     extractorPath,
