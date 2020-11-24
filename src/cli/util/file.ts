@@ -76,7 +76,7 @@ export const getFiles = (
     }
   })
 
-  return dedupe(files).sort()
+  return dedupe(files)
 }
 
 const dedupe = (texts: string[]) => {
