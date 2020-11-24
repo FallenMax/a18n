@@ -138,6 +138,7 @@ NOTE:
   .gitignore is respected by default
 `,
     )
+    return
   }
   if (!args.write && args.silent) {
     console.warn(
