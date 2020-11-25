@@ -93,20 +93,36 @@ a18n`${food}是最好吃的` // === "pizza is better than A"
 
 #### `a18n(text)`
 
-> Don't call this function yourself, this should be added by `a18n wrap` command
+> This function can/should be auto-added by `a18n wrap` command
 
 Translate static text, `text` should be literal string (instead of variable), example:
 
 ```js
 a18n('你好') // good
-a18n(greeting) // bad, `a18n extract` cannot extract "你好" from scanning code
+a18n(greeting) // bad, `a18n extract` cannot extract "你好" by analyzing code
 ```
 
 #### a18n\`text\${variable}\`
 
-> Don't call this function yourself, this should be added by `a18n wrap` command
+> This function can/should be auto-added by `a18n wrap` command
 
-Translate dynamic text, this is an ES6 syntax called [Tagged Template Literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
+Translate dynamic text.
+
+This is an ES6 syntax called [Tagged Template Literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
+
+#### a18n.x\`text\${variable}\`
+
+> This function cannot be auto-added, and should be added by user.
+
+Translate dynamic text, returns an array containing translated parts.
+
+This method is useful for displaying mixed content.
+
+```jsx
+const greeting = <div>{a18n.x`Hello ${<strong>Jimmy<strong>}`}</div>
+// could evaluate to:
+// <div>你好 <strong>Jimmy<strong></div>
+```
 
 #### `a18n.setLocale(locale)`
 
