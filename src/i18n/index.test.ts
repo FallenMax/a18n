@@ -66,6 +66,33 @@ describe('i18n', () => {
     expect(a18n`nothing ${'matters'}`).toEqual('nothing matters')
   })
 
+  test('dynamic text: return array', async () => {
+    a18n.addLocaleResource('custom', {
+      'Hello, %s': '你好 %s',
+      'Empty%1%2%3': '',
+      '%s': 'translated: %s',
+      '%1%2': 'translated: %2%1',
+      'a%1b%2c': 'translated: c%2b%1a',
+      'nothing %s': null,
+    })
+    a18n.setLocale('custom')
+
+    expect(a18n.x`Hello, ${'FallenMax'}`).toEqual(['你好 ', 'FallenMax', ''])
+    expect(a18n.x`Empty${'a'}${'b'}${'c'}`).toEqual([''])
+    expect(a18n.x`${'x'}`).toEqual(['translated: ', 'x', ''])
+    expect(a18n.x`${'x'}${'y'}`).toEqual(['translated: ', 'y', '', 'x', ''])
+    expect(a18n.x`a${1}b${2}c`).toEqual(['translated: c', 2, 'b', 1, 'a'])
+
+    expect(a18n.x``).toEqual([''])
+    expect(a18n.x`non-${'existed'}`).toEqual(['non-', 'existed', ''])
+    expect(a18n.x`non-${['some_array']}`).toEqual(['non-', ['some_array'], ''])
+    expect(a18n.x`nothing ${{ some: 'object' }}`).toEqual([
+      'nothing ',
+      { some: 'object' },
+      '',
+    ])
+  })
+
   test('dynamic text: benchmark', async () => {
     a18n.addLocaleResource('en', {
       'x%1y%2z%3w': 'a%3b%1c',

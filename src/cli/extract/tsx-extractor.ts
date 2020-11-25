@@ -108,17 +108,27 @@ export const extractCode = (
             tag,
             quasi: { quasis = [] },
           } = node
+          // a18n`something`
           if (t.isIdentifier(tag) && tag.name === LIB_IDENTIFIER) {
             addDynamicText(
               node,
               quasis.map((q) => q.value.raw),
             )
+            break
           }
-          break
+          // a18n.anyMethod`something`
+          if (
+            t.isMemberExpression(tag) &&
+            t.isIdentifier(tag.object) &&
+            tag.object.name === LIB_IDENTIFIER
+          ) {
+            addDynamicText(
+              node,
+              quasis.map((q) => q.value.raw),
+            )
+            break
+          }
         }
-
-        default:
-          break
       }
     },
   })

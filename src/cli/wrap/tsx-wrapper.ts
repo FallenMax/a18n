@@ -187,15 +187,25 @@ export const wrapCode = (
           case 'TemplateLiteral': {
             const { quasis } = node
             if (quasis.some((q) => needTranslate(q.value.raw))) {
-              // ignore when it's already: a18n`中文${someVar}`
               const parent = path.parent
-              if (
-                parent.type === 'TaggedTemplateExpression' &&
-                t.isIdentifier(parent.tag) &&
-                parent.tag.name === LIB_IDENTIFIER
-              ) {
-                markLibUsed()
-                break
+              if (parent.type === 'TaggedTemplateExpression') {
+                // ignore when it's already wrapped: a18n`中文${someVar}`
+                if (
+                  t.isIdentifier(parent.tag) &&
+                  parent.tag.name === LIB_IDENTIFIER
+                ) {
+                  markLibUsed()
+                  break
+                }
+                // ignore when it's already wrapped: a18n.anyMethod`中文${someVar}`
+                if (
+                  t.isMemberExpression(parent.tag) &&
+                  t.isIdentifier(parent.tag.object) &&
+                  parent.tag.object.name === LIB_IDENTIFIER
+                ) {
+                  markLibUsed()
+                  break
+                }
               }
 
               if (parent.type !== 'TaggedTemplateExpression') {

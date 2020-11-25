@@ -71,12 +71,25 @@ export const purgeCode = (code: string): string => {
           case 'TemplateLiteral': {
             const { quasis } = node
             const parent = path.parent
-            if (
-              t.isTaggedTemplateExpression(parent) &&
-              t.isIdentifier(parent.tag) &&
-              parent.tag.name === LIB_IDENTIFIER
-            ) {
-              path.parentPath.replaceWith(node)
+
+            if (parent.type === 'TaggedTemplateExpression') {
+              // a18n`中文${someVar}`
+              if (
+                t.isIdentifier(parent.tag) &&
+                parent.tag.name === LIB_IDENTIFIER
+              ) {
+                path.parentPath.replaceWith(node)
+                break
+              }
+              // a18n.anyMethod`中文${someVar}`
+              if (
+                t.isMemberExpression(parent.tag) &&
+                t.isIdentifier(parent.tag.object) &&
+                parent.tag.object.name === LIB_IDENTIFIER
+              ) {
+                path.parentPath.replaceWith(node)
+                break
+              }
             }
             break
           }

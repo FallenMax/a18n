@@ -15,7 +15,7 @@ export interface A18n {
   (text: string): string
 
   /**
-   * translate interpolated text (using ES6 Tagged Template syntax)
+   * translate interpolated text (using ES6 Tagged Template syntax),
    *
    * @example
    * ```js
@@ -24,15 +24,27 @@ export interface A18n {
    */
   (parts: TemplateStringsArray, ...values: (string | number)[]): string
 
-  // /**
-  //  * translate JSX Element array (using ES6 Tagged Template syntax)
-  //  *
-  //  * @example
-  //  * ```jsx
-  //  * <div>{ai8n.x`Hello {userName}`}</div> // `userName` is not limited to string, and can be any ReactNode
-  //  * ```
-  //  */
-  // x(parts: TemplateStringsArray, ...values: ReactNode[]): ReactNode[]
+  /**
+   * translate interpolated text into an array (using ES6 Tagged Template syntax),
+   *
+   * difference with a18n`some{value}`: dynamic parts can be of any type and will be kept as-is in returned array.
+   * this makes translating styled text easier, see example.
+   *
+   * @example
+   * ```jsx
+   * a18n.addLocaleResource('zh-CN', { 'Hello %s': '你好 %s'})
+   * a18n.setLocale('zh-CN')
+   *
+   * const greeting = <div>Hello <strong>Jimmy<strong></div>
+   *
+   * // after manually add a18n.x`` or modify auto wrapped code:
+   * const greeting = <div>{a18n.x`Hello ${<strong>Jimmy<strong>}`}</div>
+   *
+   * // will evaluate to:
+   * // <div>你好 <strong>Jimmy<strong></div>
+   * ```
+   */
+  x(parts: TemplateStringsArray, ...values: any[]): any[]
 
   /**
    * add resource for a language
@@ -152,9 +164,22 @@ const create = (): A18n => {
   }
 
   //-------------- instance methods --------------
-  // a18n.x = (parts, ...values): ReactNode[] => {
-  //   return []
-  // }
+  a18n.x = function (text: any) {
+    if (typeof text.length === 'number') {
+      const template = compile(text, resource)
+      const args = arguments
+
+      let result = []
+      for (let index = 0; index < template.length; index++) {
+        const item = template[index]
+        result.push(typeof item === 'number' ? args[item] : item)
+      }
+      return result
+    }
+
+    console.warn('[a18n] invalid input:', arguments)
+    return [text]
+  }
   a18n.addLocaleResource = addLocaleResource
   a18n.setLocale = setLocale
   a18n.getLocale = () => currentLocale

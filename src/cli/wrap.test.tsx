@@ -122,7 +122,7 @@ describe('wrap', () => {
     expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
-  test('returns "sourceTexts" when checkOnly=true', () => {
+  test('returns unwrapped "sourceTexts" when checkOnly=true', () => {
     const source = readFileSync(
       resolve(__dirname, '../../src/cli/__test__/wrap-input.mock.tsx'),
       { encoding: 'utf-8' },
@@ -132,6 +132,8 @@ describe('wrap', () => {
     expect(keys).toEqual([
       '中文',
       '中文',
+      '中文2',
+      '中文22',
       'eng 中间有中文 lish',
       '中文%s',
       '星期%s',

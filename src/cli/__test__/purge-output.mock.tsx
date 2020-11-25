@@ -2,7 +2,9 @@ import * as React from 'react'
 
 const s = '中文'
 const s2 = `中文`
-const s3 = '中文'
+const s3 = '中文1'
+const s4 = `有些是${'中文2'}, 有些有${`嵌套`}and some are ${'English1'}`
+const s4_1 = `有些是${'中文22'}, 有些有${`嵌套`}and some are ${'English1'}`
 const s5 = 'english'
 const s6 = 'eng 中间有中文 lish'
 const s7 = `中文${interpolated}`

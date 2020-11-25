@@ -3,7 +3,13 @@ import * as React from 'react'
 
 const s = a18n('中文')
 const s2 = a18n`中文`
-const s3 = a18n('中文')
+const s3 = a18n('中文1')
+const s4 = a18n`有些是${a18n(
+  '中文2',
+)}, 有些有${a18n`嵌套`}and some are ${'English1'}`
+const s4_1 = a18n.x`有些是${a18n(
+  '中文22',
+)}, 有些有${a18n.x`嵌套`}and some are ${'English1'}`
 const s5 = 'english'
 const s6 = a18n('eng 中间有中文 lish')
 const s7 = a18n`中文${interpolated}`
