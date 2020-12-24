@@ -63,6 +63,10 @@ const s17 = {
 
 // tsLiteral: don't touch
 export type s18 = 'YYYY年MM月DD日' | 'YYYY年MM月DD日 hh:mm'
+// tsEnumNumber don't touch
+export enum S19 {
+  '一' = 1,
+}
 
 // nullish coalescing语法
 const temp = s3 ?? s10

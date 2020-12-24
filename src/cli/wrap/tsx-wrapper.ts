@@ -163,10 +163,9 @@ export const wrapCode = (
                 }
                 markLibUsed()
               } else if (
-                // is Object key
                 !(t.isProperty(parent) && parent.key === node) &&
-                // is ts type
-                !t.isTSLiteralType(parent)
+                !t.isTSLiteralType(parent) &&
+                !t.isTSEnumMember(parent)
               ) {
                 if (checkOnly) {
                   addStaticText(node, node.value)
