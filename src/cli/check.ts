@@ -16,14 +16,10 @@ const wrapperPath = require.resolve('./wrap/tsx-wrapper')
 
 //-------------- Utils --------------
 
-const truncate = (text: string) =>
-  text.length > 20 ? text.slice(0, 17) + '...' : text
-
-const displayTable = (xs: string[][], { indent = 0 } = {}) => {
+const displayTable = (xs: string[][]) => {
   xs.forEach((x) => {
     console.info(
-      ' '.repeat(indent) +
-        x.map((str, i) => (i === 0 ? str : chalk.gray(str))).join('  '),
+      x.map((str, i) => (i === 0 ? str : chalk.gray(str))).join('  '),
     )
   })
 }
@@ -129,7 +125,7 @@ const checkWrap = async (
   if (sourceTexts.length) {
     process.stdout.write(chalk.yellow.bold`found ${sourceTexts.length}:\n`)
     const list = sourceTexts.map((t) => {
-      const key = truncate(sourceTextToKey(t))
+      const key = sourceTextToKey(t)
       return [
         key,
         `${displayPath(t.context.path)}:${t.context.line || 1}:${
@@ -137,7 +133,7 @@ const checkWrap = async (
         }`,
       ]
     })
-    displayTable(list, { indent: 2 })
+    displayTable(list)
     return false
   } else {
     process.stdout.write(chalk.yellow.bold`ok\n`)
@@ -194,13 +190,13 @@ const checkExtract = async (
 
     if (missingKeys.length) {
       missingKeysExist = true
-      console.info(chalk.green`  ${locale}: found ${missingKeys.length}:`)
+      console.info(chalk.green`${locale}: found ${missingKeys.length}:`)
       const list = missingKeys.map((key) => {
-        return [truncate(key), keyPathDict[key]]
+        return [key, keyPathDict[key]]
       })
-      displayTable(list, { indent: 4 })
+      displayTable(list)
     } else {
-      console.info(chalk.green`  ${locale}: ok`)
+      console.info(chalk.green`${locale}: ok`)
     }
   }
 
@@ -234,13 +230,11 @@ const checkResource = async (
 
     if (entriesWithoutValue.length) {
       missingValue = true
-      console.info(
-        chalk.green`  ${locale}: found ${entriesWithoutValue.length}:`,
-      )
+      console.info(chalk.green`${locale}: found ${entriesWithoutValue.length}:`)
       const list = entriesWithoutValue.map(([key]) => {
-        return [truncate(key)]
+        return [key]
       })
-      displayTable(list, { indent: 4 })
+      displayTable(list)
     } else {
       console.info(chalk.green`  ${locale}: ok`)
     }
