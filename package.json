@@ -55,9 +55,6 @@
       "!**/test/**",
       "!**/__test__/**"
     ],
-    "coverageReporters": [
-      "lcov"
-    ],
     "globals": {
       "ts-jest": {
         "diagnostics": false
