@@ -27,7 +27,12 @@ const r1 = { ...{}, ...{} }
 class SomeComponent extends React.Component {
   doStuff = () => {}
   render() {
-    return <div />
+    return (
+      <div>
+        {/* @a18n-ignore */}
+        被忽略的中文
+      </div>
+    )
   }
 }
 

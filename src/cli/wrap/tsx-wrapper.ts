@@ -18,7 +18,7 @@ const removeImportRequireFactory = (ast: any, lines: string[]) => {
       const node = path.node
       const lineStart = node.loc ? node.loc.start.line - 1 : -1
       const lineAbove = lines[lineStart - 1]
-      if (isCommentLine(lineAbove) && lineAbove.includes(LIB_IGNORE_LINE)) {
+      if (lineAbove?.includes(LIB_IGNORE_LINE)) {
         return
       }
 
@@ -127,8 +127,12 @@ export const wrapCode = (
     enter(path) {
       const node = path.node
       const lineStart = node.loc ? node.loc.start.line - 1 : -1
+      const line = lines[lineStart]
       const lineAbove = lines[lineStart - 1]
-      if (isCommentLine(lineAbove) && lineAbove.includes(LIB_IGNORE_LINE)) {
+      if (
+        lineAbove?.includes(LIB_IGNORE_LINE) ||
+        line?.includes(LIB_IGNORE_LINE)
+      ) {
         return
       }
 
