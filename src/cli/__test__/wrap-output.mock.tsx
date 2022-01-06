@@ -1,5 +1,8 @@
 import a18n from 'a18n'
+import type ReactNS from 'react'
 import * as React from 'react'
+
+type N = ReactNS.ReactNode
 
 const s = a18n('中文')
 const s2 = a18n`中文`
@@ -78,3 +81,6 @@ const temp = s3 ?? s10
 
 // optional chaining语法
 const temp2 = (s3 as any)?.y?.z
+
+// Logical OR assignment
+a ||= b
