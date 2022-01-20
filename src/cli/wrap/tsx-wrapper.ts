@@ -1,5 +1,6 @@
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
+import CJK from 'cjk-regex'
 import { SourceTextWithContext } from '../../types'
 import {
   LIB_FACTORY_IDENTIFIER,
@@ -60,8 +61,9 @@ const removeImportRequireFactory = (ast: any, lines: string[]) => {
   })
 }
 
+const cjkRegex = CJK().toRegExp()
 export const needTranslate = (str: string): boolean => {
-  return /[^\u0000-\u007F]+/.test(str) && !/^\s*$/.test(str)
+  return cjkRegex.test(str)
 }
 
 const isCommentLine = (line: string | null): boolean => {

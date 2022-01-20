@@ -1214,6 +1214,14 @@ ci-info@^2.0.0:
   resolved "http://registry.npm.taobao.org/ci-info/download/ci-info-2.0.0.tgz#67a9e964be31a51e15e5010d58e6f12834002f46"
   integrity sha1-Z6npZL4xpR4V5QENWObxKDQAL0Y=
 
+cjk-regex@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/cjk-regex/-/cjk-regex-2.0.1.tgz#98cca187aa67931db14f0d9dde556150c8116d95"
+  integrity sha512-4YTL4Zxzy33EhD2YMBQg6qavT+3OrYYu45RHcLANXhbVTXmVcwNQIv0vL1TUWjOS7bH0n0dVcGAdJAGzWSAa3A==
+  dependencies:
+    regexp-util "^1.2.1"
+    unicode-regex "^2.0.0"
+
 class-utils@^0.3.5:
   version "0.3.6"
   resolved "http://registry.npm.taobao.org/class-utils/download/class-utils-0.3.6.tgz#f93369ae8b9a7ce02fd41faad0ca83033190c463"
@@ -3351,6 +3359,13 @@ regex-not@^1.0.0, regex-not@^1.0.2:
     extend-shallow "^3.0.2"
     safe-regex "^1.1.0"
 
+regexp-util@^1.2.0, regexp-util@^1.2.1:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/regexp-util/-/regexp-util-1.2.2.tgz#5cf599134921eb0d776e41d41e9c0da33f0fa2fc"
+  integrity sha512-5/rl2UD18oAlLQEIuKBeiSIOp1hb5wCXcakl5yvHxlY1wyWI4D5cUKKzCibBeu741PA9JKvZhMqbkDQqPusX3w==
+  dependencies:
+    tslib "^1.9.0"
+
 remove-trailing-separator@^1.0.1:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/remove-trailing-separator/-/remove-trailing-separator-1.1.0.tgz#c24bce2a283adad5bc3f58e0d48249b92379d8ef"
@@ -4028,6 +4043,11 @@ tslib@2.0.1, tslib@^2.0.1:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.0.1.tgz#410eb0d113e5b6356490eec749603725b021b43e"
   integrity sha512-SgIkNheinmEBgx1IUNirK0TUD4X9yjjBRTqqjggWCU3pUEqIk3/Uwl3yRixYKT6WjQuGiwDv4NomL3wqRCj+CQ==
 
+tslib@^1.9.0:
+  version "1.14.1"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
+  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
+
 tunnel-agent@^0.6.0:
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.6.0.tgz#27a5dea06b36b04a0a9966774b290868f0fc40fd"
@@ -4073,6 +4093,13 @@ typescript@^4.1.2:
   version "4.1.2"
   resolved "https://registry.npm.taobao.org/typescript/download/typescript-4.1.2.tgz?cache=0&sync_timestamp=1605854951801&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Ftypescript%2Fdownload%2Ftypescript-4.1.2.tgz#6369ef22516fe5e10304aae5a5c4862db55380e9"
   integrity sha1-Y2nvIlFv5eEDBKrlpcSGLbVTgOk=
+
+unicode-regex@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/unicode-regex/-/unicode-regex-2.0.0.tgz#ef8f6642c37dddcaa0c09af5b9456aabf6b436a3"
+  integrity sha512-5nbEG2YU7loyTvPABaKb+8B0u8L7vWCsVmCSsiaO249ZdMKlvrXlxR2ex4TUVAdzv/Cne/TdoXSSaJArGXaleQ==
+  dependencies:
+    regexp-util "^1.2.0"
 
 union-value@^1.0.0:
   version "1.0.0"
