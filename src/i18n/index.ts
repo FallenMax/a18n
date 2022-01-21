@@ -148,6 +148,10 @@ const create = (): A18n => {
     }
 
     if (text && typeof text.length === 'number') {
+      if (text.length === 1) {
+        // shortcut for a18n`statictext`, due to misusage
+        return a18n(text[0])
+      }
       const template = compile(text, resource)
       const args = arguments
 
@@ -166,6 +170,10 @@ const create = (): A18n => {
   //-------------- instance methods --------------
   a18n.x = function (text: any) {
     if (typeof text.length === 'number') {
+      if (text.length === 1) {
+        // shortcut for a18n.x`statictext`, due to misusage
+        return [a18n(text)]
+      }
       const template = compile(text, resource)
       const args = arguments
 
