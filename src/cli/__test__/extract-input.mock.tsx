@@ -16,6 +16,7 @@ const s15_1 = (
   <>
     {a18n('我喜欢2')}
     <input type="text" placeholder={a18n('这样子2')} />
+    <span>{a18n.x`你有${(<strong>{x}</strong>)}封未读邮件`}</span>
   </>
 )
 
