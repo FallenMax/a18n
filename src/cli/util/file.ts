@@ -14,6 +14,7 @@ export const isDirectory = (path: string): boolean => {
     return false
   }
 }
+
 export const toAbsolutePath = (path: string): string => {
   return path.startsWith('/') ? path : resolve(process.cwd(), path)
 }

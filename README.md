@@ -13,11 +13,12 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
 ## Features
 
 - CLI (for code modification):
-  - Wrap texts with translation calls (`a18n wrap`)
+  - **Wrap** texts with translation calls (`a18n wrap`)
     > Note:
-    > "Wrap" is only applied to non-ascii texts (e.g. Chinese, Japanese, etc), so texts in English are not supported for now. Discussion is welcomed
-  - Extract texts from translation calls (`a18n extract`)
-  - Check for untranslated text in code and resources (`a18n check`)
+    > "Wrap" is only applied to CJK texts, so texts in English are not supported for now. Discussion is welcomed
+  - **Extract** texts from translation calls (`a18n extract`)
+  - **Check** for untranslated text in code and resources (`a18n check`)
+  - **Replace** untranslated in code with translated ones (`a18n replace`)
   - Support dynamic texts in ES6 Template String
   - Support TypeScript
   - Support React, or any framework that uses JSX

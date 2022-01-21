@@ -5,6 +5,7 @@ import { check } from './check'
 import { DEFAULT_LOCALES } from './constants'
 import { extract } from './extract'
 import { purge } from './purge'
+import { replace } from './replace'
 import { ExitCode } from './util/exit_code'
 import { getFiles, isDirectory, isSourceCode } from './util/file'
 import { wrap } from './wrap'
@@ -242,6 +243,69 @@ OPTIONS:
     silent: true,
   })
 }
+const handleReplace = async () => {
+  let [
+    /* path, optional */
+    p0,
+    /** localeRoot */
+    p1,
+    /** locale */
+    p2,
+  ] = restArgs
+  let files: string[] | undefined
+  if (p0 && p1 && p2) {
+    files = getFileList(p0)
+  } else if (p0 && p1) {
+    ;[p1, p2] = [p0, p1]
+    files = getFileList(undefined)
+  }
+
+  if (args.help || !files) {
+    console.info(
+      `a18n replace <path> <localeRoot> <locale> --write [<options>]
+
+DESCRIPTION
+  Modify code files from given <path>, replace texts wrapped in 'a18n()/a18n\`\`' calls with translated texts, using target <locale> and resources in <localeRoot>.
+  Stdin is read as file list if it is piped to a18n and no <path> is given.
+
+OPTIONS:
+  '<path>':
+    file/dir/glob, code files to be processed. multiple entries are seperated by comma
+  '<localeRoot'>:
+    directory to store locale resource files
+  '<locale>':
+    target language to be translated to, example: 'en-US'. corresponding resources file (en-US.json) is expected to exist under <localeRoot>
+  '--write':
+    write files in place. if not provided, a18n will perform a dry run and print files to be modified
+  '--exclude':
+    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+  '--silent':
+    do not print files being processed (this will be ignored when '--write' is not present)
+
+NOTE:
+  only .js, .ts, .jsx, .tsx files are supported.
+  .gitignore is respected by default
+`,
+    )
+    return
+  }
+  const absoluteLocaleRoot = resolve(process.cwd(), p1)
+  assert(
+    isDirectory(absoluteLocaleRoot),
+    `locale root is not a directory: ${p1}`,
+  )
+
+  if (!args.write && args.silent) {
+    args.silent = false
+  }
+  await replace(files, {
+    localeRoot: absoluteLocaleRoot,
+    locale: p2,
+    write: args.write,
+    exclude: args.exclude,
+    silent: args.silent,
+  })
+}
 
 const main = async () => {
   switch (command) {
@@ -261,8 +325,12 @@ const main = async () => {
       await handleCheck()
       break
     }
+    case 'replace': {
+      await handleReplace()
+      break
+    }
     default:
-      console.info('Supported commands: wrap, extract, check, purge')
+      console.info('Supported commands: wrap, extract, check, replace, purge')
       console.info('Run `a18n <command> --help` to see help for <command>')
       break
   }

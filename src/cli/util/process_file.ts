@@ -27,6 +27,7 @@ export const processFiles = async <
   const worker = new JestWorker(processorPath, {
     exposedMethods: [processFunction as string],
     maxRetries: 0,
+    enableWorkerThreads: true,
     forkOptions: {
       stdio: 'inherit',
     },
