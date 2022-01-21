@@ -68,12 +68,12 @@ export const purgeCode = (code: string): string => {
             break
 
           //  a18n`中文${someVar}` => `中文${someVar}`
+          //  a18n.x`中文${someVar}` => ['中文',someVar, '']
           case 'TemplateLiteral': {
-            const { quasis } = node
             const parent = path.parent
 
             if (parent.type === 'TaggedTemplateExpression') {
-              // a18n`中文${someVar}`
+              // a18n`中文${someVar}`  => `中文${someVar}`
               if (
                 t.isIdentifier(parent.tag) &&
                 parent.tag.name === LIB_IDENTIFIER
@@ -81,13 +81,28 @@ export const purgeCode = (code: string): string => {
                 path.parentPath.replaceWith(node)
                 break
               }
-              // a18n.anyMethod`中文${someVar}`
+              // a18n.x`中文${someVar}` => ['中文',someVar, '']
               if (
                 t.isMemberExpression(parent.tag) &&
                 t.isIdentifier(parent.tag.object) &&
-                parent.tag.object.name === LIB_IDENTIFIER
+                parent.tag.object.name === LIB_IDENTIFIER &&
+                t.isIdentifier(parent.tag.property) &&
+                parent.tag.property.name === 'x'
               ) {
-                path.parentPath.replaceWith(node)
+                const { quasis = [], expressions = [] } = node
+                const elements: t.Expression[] = []
+                quasis.forEach((quasi, i) => {
+                  elements.push(
+                    t.stringLiteral(
+                      quasi.value.cooked ?? quasi.value.raw ?? '',
+                    ),
+                  )
+                  if (expressions[i]) {
+                    elements.push(expressions[i])
+                  }
+                })
+
+                path.parentPath.replaceWith(t.arrayExpression(elements))
                 break
               }
             }
