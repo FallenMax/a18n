@@ -46,6 +46,7 @@ describe('i18n', () => {
 
   test('dynamic text', async () => {
     a18n.addLocaleResource('custom', {
+      'static key': 'static value',
       'Hello, %s': '你好 %s',
       'Empty%1%2%3': '',
       '%s': 'translated: %s',
@@ -55,6 +56,7 @@ describe('i18n', () => {
     })
     a18n.setLocale('custom')
 
+    expect(a18n`static key`).toEqual('static value')
     expect(a18n`Hello, ${'FallenMax'}`).toEqual('你好 FallenMax')
     expect(a18n`Empty${'a'}${'b'}${'c'}`).toEqual('')
     expect(a18n`${'x'}`).toEqual('translated: x')
@@ -68,6 +70,7 @@ describe('i18n', () => {
 
   test('dynamic text: return array', async () => {
     a18n.addLocaleResource('custom', {
+      'static key': 'static value',
       'Hello, %s': '你好 %s',
       'Empty%1%2%3': '',
       '%s': 'translated: %s',
@@ -77,6 +80,7 @@ describe('i18n', () => {
     })
     a18n.setLocale('custom')
 
+    expect(a18n.x`static key`).toEqual(['static value'])
     expect(a18n.x`Hello, ${'FallenMax'}`).toEqual(['你好 ', 'FallenMax', ''])
     expect(a18n.x`Empty${'a'}${'b'}${'c'}`).toEqual([''])
     expect(a18n.x`${'x'}`).toEqual(['translated: ', 'x', ''])
