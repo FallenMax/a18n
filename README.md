@@ -15,16 +15,16 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
 - CLI (for code modification):
   - **Wrap** texts with translation calls (`a18n wrap`)
     > Note:
-    > "Wrap" is only applied to CJK texts, so texts in English are not supported for now. Discussion is welcomed
+    > "Wrap" is only applied to CJK texts, so texts in English are not supported for now.
   - **Extract** texts from translation calls (`a18n extract`)
   - **Check** for untranslated text in code and resources (`a18n check`)
   - **Replace** untranslated in code with translated ones (`a18n replace`)
+  - **Purge** remove translation calls and imports (`a18n purge`)
   - Support dynamic texts in ES6 Template String
   - Support TypeScript
   - Support React, or any framework that uses JSX
   - Ignore lines or files with annotation comments
-  - Preserves original code formatting while modifying code (though [prettier](https://github.com/prettier/prettier) is still recommended)
-  - Bonus: in case you regret using this lib (please tell us why), you can remove `a18n` calls (`a18n purge`)
+  - Preserves original code formatting while modifying code as much as possible (though [prettier](https://github.com/prettier/prettier) is still recommended)
 - API (for text translation):
   - Translate static and dynamic texts using provided locale resource
   - Tiny (~ 200 loc)
@@ -34,20 +34,20 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
 
 > WARNING: existing project code will be modified, backup or commit before proceed
 
-Install as dependency (not devDependency, as `a18n` is both a CLI and a runtime)
+Install as dependency (not devDependency, as `a18n` provides both CLI and runtime)
 
 ```sh
 cd that_legacy_codebase
-npm install --save a18n # or: yarn add a18n
+npm install --save a18n
 ```
 
-Scan and modify code files (.js, .ts, .jsx, .tsx) in `src` directory, this will wrap _non-english_ text strings with translation calls:
+Scan and modify code files (.js, .ts, .jsx, .tsx) in `src` directory, this will wrap CJK text strings with translation calls:
 
 ```sh
 npx a18n wrap src --write
 ```
 
-Manually check for unintended modifications and fix them
+Manually check for unintended modifications and fix them, you can:
 
 - use comment `// @a18n-ignore` to ignore next line
 - use comment `/* @a18n-ignore-file */` to ignore entire file
@@ -92,7 +92,7 @@ a18n`${food}是最好吃的` // === "pizza is better than A"
 
 ### API
 
-#### `a18n(text)`
+#### a18n(text)
 
 > This function can/should be auto-added by `a18n wrap` command
 
@@ -125,7 +125,7 @@ const greeting = <div>{a18n.x`Hello ${<strong>Jimmy<strong>}`}</div>
 // <div>你好 <strong>Jimmy<strong></div>
 ```
 
-#### `a18n.setLocale(locale)`
+#### a18n.setLocale(locale)
 
 Set locale to use.
 
@@ -133,7 +133,7 @@ This method should be called BEFORE every `a18n` translation functions are calle
 
 `a18n` use `navigator.language` as initial value
 
-#### `a18n.addLocaleResource(locale, resource)`
+#### a18n.addLocaleResource(locale, resource)
 
 Add resource for specified locale. Resource is usually extracted using `a18n extract` command.
 
@@ -156,7 +156,7 @@ Will merge with existing resource and overwrite values that have same keys.
 
 This method should be called BEFORE every `a18n` translation functions are called.
 
-#### (Advanced) `a18n.getA18n(namespace)`
+#### (Advanced) a18n.getA18n(namespace)
 
 > this method is usually auto added with `a18n wrap` command, with `--namespace` option
 
