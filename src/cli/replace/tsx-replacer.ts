@@ -2,7 +2,7 @@ import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import translator, { A18n } from '../../i18n/index'
 import { sourceTextToKey } from '../../util/locale'
-import { LIB_IDENTIFIER } from '../constants'
+import { LIB_IDENTIFIER, LIB_METHOD_X_IDENTIFIER } from '../constants'
 import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
 
@@ -134,7 +134,7 @@ export const replaceCode = (
             t.isIdentifier(tag.object) &&
             tag.object.name === LIB_IDENTIFIER &&
             t.isIdentifier(tag.property) &&
-            tag.property.name === 'x'
+            tag.property.name === LIB_METHOD_X_IDENTIFIER
           ) {
             const newTemplateLiteral = translateTemplateLiteral(
               translator,

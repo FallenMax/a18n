@@ -3,6 +3,7 @@ import * as t from '@babel/types'
 import {
   LIB_FACTORY_IDENTIFIER,
   LIB_IDENTIFIER,
+  LIB_METHOD_X_IDENTIFIER,
   LIB_MODULE,
 } from '../constants'
 import { parse, print } from '../util/ast'
@@ -87,7 +88,7 @@ export const purgeCode = (code: string): string => {
                 t.isIdentifier(parent.tag.object) &&
                 parent.tag.object.name === LIB_IDENTIFIER &&
                 t.isIdentifier(parent.tag.property) &&
-                parent.tag.property.name === 'x'
+                parent.tag.property.name === LIB_METHOD_X_IDENTIFIER
               ) {
                 const { quasis = [], expressions = [] } = node
                 const elements: t.Expression[] = []
