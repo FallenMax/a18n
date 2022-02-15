@@ -145,17 +145,9 @@ export const extractFile = (filePath: string) => {
       sourceTexts,
     }
   } catch (error) {
-    const loc = error?.loc
-    if (loc) {
-      console.error(
-        `[a18n] error processing: ${filePath}:${loc.line}:${loc.column}`,
-      )
-    } else {
-      console.error(`[a18n] error processing: ${filePath}`)
-    }
-    console.error(error)
     return {
       ok: false,
+      error,
     }
   }
 }

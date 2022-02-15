@@ -37,7 +37,30 @@ export const processFiles = async <
     if (params.silent !== true) {
       console.info(file)
     }
-    return await worker[processFunction](file, params)
+    let result: any = { ok: false }
+    try {
+      result = await worker[processFunction](file, params)
+    } catch (error) {
+      result = {
+        ok: false,
+        error,
+      }
+    }
+
+    if (!result.ok) {
+      const error = result.error
+      const loc = error?.loc
+      if (loc) {
+        console.warn(
+          `[a18n] error processing: ${file}:${loc.line}:${loc.column}`,
+        )
+      } else {
+        console.warn(`[a18n] error processing: ${file}`)
+      }
+      console.error(error)
+    }
+
+    return result
   }
 
   const results = await parallelMap(files, processFile, {
