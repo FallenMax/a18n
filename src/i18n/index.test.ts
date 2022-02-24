@@ -186,10 +186,7 @@ describe('i18n', () => {
 
   describe('namespace', () => {
     test('different namespaces should be isolated (different instance/locale/resource)', () => {
-      expect(getA18n('a')).toBe(getA18n('a'))
-      expect(getA18n('a')).not.toBe(getA18n('b'))
-
-      // module a
+      // namespace a
       {
         const a18n = getA18n('a')
 
@@ -208,7 +205,7 @@ describe('i18n', () => {
         expect(a18n`z${1}`).toEqual('z1')
       }
 
-      // module b
+      // namespace b
       {
         const a18n = getA18n('b')
         a18n.addLocaleResource('en', {
@@ -226,7 +223,7 @@ describe('i18n', () => {
         expect(a18n`z${1}`).toEqual('z1-translated')
       }
 
-      // module a runs again, should be using its own locale/resource
+      // namespace a runs again, should be using its own locale/resource
       {
         const a18n = getA18n('a')
 
@@ -248,7 +245,7 @@ describe('i18n', () => {
         a18n.setLocale('jp')
       }
 
-      // module b runs again, should be using its own locale/resources
+      // namespace b runs again, should be using its own locale/resources
       {
         const a18n = getA18n('b')
         a18n.addLocaleResource('en', {
@@ -268,60 +265,65 @@ describe('i18n', () => {
         expect(a18n.getLocale()).toBe('en')
       }
     })
+  })
 
-    test(`same namespaces (that sharing same globalThis) should have same a18n instance
-// build a18n before run this test, so that the two copies of a18n are equivalent but not same
-`, () => {
-      let rootA = require('./index')
-      let rootB = require('../../dist/i18n/index')
-      expect(rootA).not.toBe(rootB)
+  describe('module', () => {
+    test('should use translation from correct module', () => {
+      const tA = getA18n('ns', 'a')
+      const tB = getA18n('ns', 'b')
+      const tNoModule = getA18n('ns')
 
-      let a = rootA.getA18n('same namespace')
-      let c = a.getA18n('same namespace')
-      let b = rootB.getA18n('same namespace')
-      let d = b.getA18n('same namespace')
-      expect(a).toBe(b)
-      expect(b).toBe(c)
-      expect(c).toBe(d)
+      tA.addLocaleResource('custom', {
+        x: 'no-module',
+        'x %s': 'no-module %s',
+        fallback: 'root fallback',
+        a: {
+          x: 'a',
+          'x %s': 'a %s',
+        },
+        b: {
+          x: 'b',
+          'x %s': 'b %s',
+        },
+      })
+      tA.setLocale('custom')
+
+      expect(tNoModule('x')).toEqual('no-module')
+      expect(tNoModule`x ${1}`).toEqual('no-module 1')
+      expect(tNoModule('no-translation')).toEqual('no-translation')
+
+      expect(tA('x')).toEqual('a')
+      expect(tA`x ${1}`).toEqual('a 1')
+      expect(tA('no-translation')).toEqual('no-translation')
+      expect(tA('fallback')).toEqual('fallback') // should not fallback to root module
+
+      expect(tB('x')).toEqual('b')
+      expect(tB`x ${1}`).toEqual('b 1')
+      expect(tB('no-translation')).toEqual('no-translation')
     })
   })
 
   describe('DEBUG_reset', () => {
-    const setup = () => {
-      const def = a18n
+    test('can be resetted', () => {
+      const noNs = a18n
+      noNs.addLocaleResource('en', { x: 'y-noNs' })
+      noNs.setLocale('en')
+
       const a = a18n.getA18n('a')
-      const b = a18n.getA18n('b')
-      def.addLocaleResource('en', { x: 'y-def' })
-      def.setLocale('en')
       a.addLocaleResource('en', { x: 'y-a' })
       a.setLocale('en')
+
+      const b = a18n.getA18n('b')
       b.addLocaleResource('en', { x: 'y-b' })
       b.setLocale('en')
-      return { def, a, b }
-    }
-    test('can be resetted from local instance', () => {
-      const { def, a, b } = setup()
 
-      expect(def('x')).toBe('y-def')
-      expect(a('x')).toBe('y-a')
-      expect(b('x')).toBe('y-b')
-
-      def.DEBUG_reset()
-
-      expect(def('x')).toBe('x')
-      expect(a('x')).toBe('x')
-      expect(b('x')).toBe('x')
-    })
-    test('can be resetted from global instance', () => {
-      const { def, a, b } = setup()
-
-      expect(def('x')).toBe('y-def')
+      expect(noNs('x')).toBe('y-noNs')
       expect(a('x')).toBe('y-a')
       expect(b('x')).toBe('y-b')
 
       a.DEBUG_reset()
 
-      expect(def('x')).toBe('x')
+      expect(noNs('x')).toBe('x')
       expect(a('x')).toBe('x')
       expect(b('x')).toBe('x')
     })

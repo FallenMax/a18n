@@ -1,6 +1,6 @@
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-import { Context, SourceText, SourceTextWithContext } from '../../types'
+import { SourceContext, SourceText, SourceTextWithContext } from '../../types'
 import { LIB_IDENTIFIER } from '../constants'
 import { parse } from '../util/ast'
 import { readFile } from '../util/file'
@@ -60,7 +60,7 @@ export const toDynamicText = (
 export const extractCode = (
   code: string,
   filePath: string,
-): (SourceText & { context: Context })[] => {
+): (SourceText & { context: SourceContext })[] => {
   let sourceTexts = [] as SourceTextWithContext[]
 
   const ast = parse(code)
