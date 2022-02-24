@@ -234,7 +234,8 @@ const s = a18n('中文')`)
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'filePath',
-          filePath: 'a/b/c/foo.ts',
+          filePath: '/root/a/b/c/foo.ts',
+          basePath: '/root',
         }),
       ).toBe(`import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'a/b/c/foo')
@@ -246,7 +247,8 @@ const s = a18n('中文')`)
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'fileName',
-          filePath: 'a/b/c/foo.ts',
+          filePath: '/root/a/b/c/foo.ts',
+          basePath: '/root',
         }),
       ).toBe(`import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'foo')
@@ -263,7 +265,8 @@ const s = a18n('中文')`,
             namespace: 'my-namespace',
             moduleName: 'fileName',
             moduleNameUpdate: false,
-            filePath: 'a/b/c/foo.ts',
+            filePath: '/root/a/b/c/foo.ts',
+            basePath: '/root',
           },
         ),
       ).toBe(`import { getA18n } from 'a18n'
@@ -281,7 +284,8 @@ const s = a18n('中文')`,
             namespace: 'my-namespace',
             moduleName: 'fileName',
             moduleNameUpdate: true,
-            filePath: 'a/b/c/foo.ts',
+            filePath: '/root/a/b/c/foo.ts',
+            basePath: '/root',
           },
         ),
       ).toBe(`import { getA18n } from 'a18n'

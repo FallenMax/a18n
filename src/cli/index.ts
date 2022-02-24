@@ -23,6 +23,7 @@ const args = parseArgs(process.argv.slice(2), {
     'skip-extract',
     'skip-resource',
     'keep-unused',
+    'module-name-update',
   ],
 })
 const [command, ...restArgs] = args._
@@ -60,10 +61,11 @@ OPTIONS:
   '--namespace':
     a name that uniquely identifies current project, this helps avoid resource conflicting with other dependencies that also uses "a18n"
   '--module-name={template}':
-    auto-generate module name using provided template, if no default module name is provided. requires '--namespace' to be provided
-    for example, running "a18n wrap a/b/c/foo.ts --namespace=my-ns --module-name=filePath" will insert: "const a18n = getA18n('my-ns', 'a/b/c/foo')", 
+    generate module name using provided template, if no default module name is provided. requires '--namespace' to be provided
+    for example, running "a18n wrap a/b/c/foo.ts --namespace=my-ns --module-name=filePath" will insert: 
+      "const a18n = getA18n('my-ns', 'a/b/c/foo')"
     and this a18n instance will use 'resource['a/b/c/foo']' instead of 'resource' when translating. 
-    available templates are:
+    available template values are:
       'filePath': file extension is ignored, "a/b/c/foo.ts" will be "a/b/c/foo"
       'fileName': file extension is ignored, "a/b/c/foo.ts" will be "foo"
   '--module-name-update':
@@ -81,6 +83,15 @@ NOTE:
     )
     return
   }
+  if (args['module-name'] && !args['namespace']) {
+    console.error('`--module-name` requires `--namespace`')
+    process.exit(ExitCode.InvalidArgument)
+  }
+  if (args['module-name-update'] && !args['module-name']) {
+    console.error('`--module-name-update` requires `--module-name`')
+    process.exit(ExitCode.InvalidArgument)
+  }
+
   if (!args.write && args.silent) {
     args.silent = false
   }
@@ -351,5 +362,5 @@ main()
   })
   .catch((e) => {
     console.error(e)
-    process.exit(ExitCode.Unknown)
+    process.exit(ExitCode.UnknownError)
   })
