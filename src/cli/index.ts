@@ -59,6 +59,15 @@ OPTIONS:
     write files in place. if not provided, a18n will perform a dry run and print files to be modified
   '--namespace':
     a name that uniquely identifies current project, this helps avoid resource conflicting with other dependencies that also uses "a18n"
+  '--module-name={template}':
+    auto-generate module name using provided template, if no default module name is provided. requires '--namespace' to be provided
+    for example, running "a18n wrap a/b/c/foo.ts --namespace=my-ns --module-name=filePath" will insert: "const a18n = getA18n('my-ns', 'a/b/c/foo')", 
+    and this a18n instance will use 'resource['a/b/c/foo']' instead of 'resource' when translating. 
+    available templates are:
+      'filePath': file extension is ignored, "a/b/c/foo.ts" will be "a/b/c/foo"
+      'fileName': file extension is ignored, "a/b/c/foo.ts" will be "foo"
+  '--module-name-update':
+    when using '--module-name' and the module name is already defined in the code, update the module name.
   '--exclude':
     directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':

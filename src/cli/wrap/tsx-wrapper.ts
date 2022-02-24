@@ -80,12 +80,15 @@ const fromStringLiteral = (
     return undefined
   }
 }
+export type ModuleNameTemplate = 'filePath' | 'fileName'
 
 export const wrapCode = (
   code: string,
   options: {
     filePath?: string
     namespace?: string
+    moduleName?: ModuleNameTemplate
+    moduleNameUpdate?: boolean
     checkOnly?: boolean
   },
 ): {
