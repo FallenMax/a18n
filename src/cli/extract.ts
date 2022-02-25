@@ -1,12 +1,11 @@
 import mkdirp from 'mkdirp'
 import { join } from 'path'
-import {
-  LocaleResource,
-  LocaleResourceExtracted,
-  SourceTextWithContext,
-} from '../types'
+import { FormattedText, LocaleResource, SourceTextWithContext } from '../types'
+import { assertNever } from '../util/assert-never'
+import { isObject } from '../util/is_object'
 import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
+import { getFormatted, putFormatted } from './resource'
 import { isFile, readFile, writeFile } from './util/file'
 import { flatten } from './util/flatten'
 import { keepTruthy } from './util/keep_truthty'
@@ -14,55 +13,113 @@ import { processFiles } from './util/process_file'
 const extractorPath = require.resolve('./extract/tsx-extractor')
 
 export const importers = {
-  json: (fileContent) => {
+  json: (fileContent: string): LocaleResource => {
     return JSON.parse(fileContent)
   },
-} as {
-  [K: string]: (fileContent: string) => LocaleResource
 }
-
 export const exporters = {
-  json: (resource) => {
-    const output = {} as LocaleResource
-    Object.keys(resource).forEach((key) => {
-      output[key] = resource[key].value
-    })
-    return JSON.stringify(output, null, 2)
+  json: (resource: LocaleResource): string => {
+    return JSON.stringify(resource, null, 2)
   },
-} as {
-  [K: string]: (
-    localeResource: LocaleResourceExtracted,
-    moduleName: string,
-  ) => string
 }
 
-export const createResource = (
-  sourceTexts: SourceTextWithContext[],
-  existed: LocaleResource,
-  keepUnused?: boolean,
-): LocaleResourceExtracted => {
-  let resource = {} as LocaleResourceExtracted
-  if (keepUnused) {
-    Object.keys(existed).forEach((key) => {
-      resource[key] = {
-        value: (existed && existed[key]) ?? null,
-        contexts: [],
+export type ReuseStrategy =
+  | 'no'
+  | 'same-module'
+  | 'same-module-then-root'
+  | 'all'
+
+export const createResource = ({
+  sourceTexts,
+  old,
+  keepUnused,
+  reuseFrom = 'same-module-then-root',
+}: {
+  sourceTexts: SourceTextWithContext[]
+  old: LocaleResource
+  keepUnused?: boolean
+  reuseFrom?: ReuseStrategy
+}): LocaleResource => {
+  const resource: LocaleResource = keepUnused ? old : {}
+
+  let keyToValue: { [Key: string]: FormattedText } = {}
+  if (reuseFrom === 'all') {
+    // build a map of key to value
+    Object.keys(old).forEach((keyOrModName) => {
+      const value = old[keyOrModName]
+      if (isObject(value)) {
+        const mod = value
+        Object.keys(mod).forEach((key) => {
+          keyToValue[key] = mod[key] ?? keyToValue[key]
+        })
+      } else if (typeof value === 'string') {
+        keyToValue[keyOrModName] = value ?? keyToValue[keyOrModName]
       }
     })
   }
 
   sourceTexts.forEach((sourceText) => {
     const key = sourceTextToKey(sourceText)
-    if (!resource[key]) {
-      resource[key] = {
-        value: (existed && existed[key]) ?? null,
-        contexts: [sourceText.context],
+    const moduleName = sourceText.context.module
+    let existed: FormattedText = null
+    switch (reuseFrom) {
+      case 'no':
+        break
+      case 'same-module-then-root': {
+        existed =
+          getFormatted(old, moduleName, key) ??
+          getFormatted(old, undefined, key) ??
+          null
+        break
       }
-    } else {
-      resource[key].contexts.push(sourceText.context)
+      case 'same-module': {
+        existed = getFormatted(old, moduleName, key) ?? null
+        break
+      }
+      case 'all': {
+        existed =
+          getFormatted(old, moduleName, key) ??
+          getFormatted(old, undefined, key) ??
+          keyToValue[key] ??
+          null
+        break
+      }
+
+      default:
+        return assertNever(reuseFrom)
     }
+
+    putFormatted(resource, moduleName, key, existed)
   })
   return resource
+}
+
+export const toSourceText = (
+  o: LocaleResource,
+  file = '',
+): SourceTextWithContext[] => {
+  let xs: SourceTextWithContext[] = []
+  Object.keys(o).forEach((keyOrMod) => {
+    const value = o[keyOrMod]
+    if (isObject(value)) {
+      Object.keys(value).forEach((k) => {
+        xs.push({
+          type: 'string',
+          text: k,
+          value: value[k] ?? null,
+          context: { path: file, module: keyOrMod },
+        })
+      })
+    } else {
+      xs.push({
+        type: 'string',
+        text: keyOrMod,
+        value: value ?? null,
+        context: { path: file, module: undefined },
+      })
+    }
+  })
+  return xs
 }
 
 export const extract = async (
@@ -73,6 +130,7 @@ export const extract = async (
     exclude?: string
     silent?: boolean
     keepUnused?: boolean
+    reuseFrom?: ReuseStrategy
   },
 ) => {
   const results = await processFiles<typeof TsxExtractor, 'extractFile'>(
@@ -104,14 +162,14 @@ export const extract = async (
 
   mkdirp.sync(params.localeRoot)
   params.locales.forEach((locale) => {
-    const existingResource = getExsitingResource(locale)
-    const nextResource = createResource(
+    const oldResource = getExsitingResource(locale)
+    const newResource = createResource({
       sourceTexts,
-      existingResource,
-      params.keepUnused,
-    )
+      old: oldResource,
+      keepUnused: params.keepUnused,
+    })
     const filePath = join(params.localeRoot, `${locale}.json`)
-    const fileContent = exporters.json(nextResource, locale)
+    const fileContent = exporters.json(newResource)
     writeFile(filePath, fileContent)
   })
 }

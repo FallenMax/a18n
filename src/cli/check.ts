@@ -3,7 +3,9 @@ import { readdirSync } from 'fs'
 import { join, relative } from 'path'
 import { LocaleResource } from '../types'
 import { sourceTextToKey } from '../util/locale'
+import { toSourceText } from './extract'
 import type * as TsxExtractor from './extract/tsx-extractor'
+import { isKeyExisted } from './resource'
 import { ExitCode } from './util/exit_code'
 import { isFile, readFile } from './util/file'
 import { flatten } from './util/flatten'
@@ -51,36 +53,13 @@ const getExistingLocales = (localeRoot: string): string[] => {
   )
 }
 
-const fromEntries = <T>(entries: [string, T][]): Record<string, T> => {
-  let o: Record<string, T> = {}
-  for (let index = 0; index < entries.length; index++) {
-    const [key, value] = entries[index]
-    o[key] = value
-  }
-  return o
-}
-const excludeKeys = (
-  a: Record<string, unknown>,
-  b: Record<string, unknown>,
-) => {
-  let excluded: string[] = []
-  for (const key in a) {
-    if (Object.prototype.hasOwnProperty.call(a, key)) {
-      if (!(key in b)) {
-        excluded.push(key)
-      }
-    }
-  }
-  return excluded
-}
-
 const cwd = process.cwd()
 const displayPath = (path: string) => {
   return relative(cwd, path)
 }
 
 //-------------- Checkers --------------
-export type CheckParams = {
+export type CheckOptions = {
   localeRoot: string
   locales?: string[]
   skipWrap?: boolean
@@ -92,7 +71,7 @@ export type CheckParams = {
 
 const checkWrap = async (
   files: string[],
-  params: CheckParams,
+  params: CheckOptions,
 ): Promise<boolean> => {
   process.stdout.write(
     chalk.yellow.bold`\nChecking for unwrapped texts in code ... `,
@@ -143,36 +122,24 @@ const checkWrap = async (
 
 const checkExtract = async (
   files: string[],
-  params: CheckParams,
+  params: CheckOptions,
 ): Promise<boolean> => {
   process.stdout.write(
     chalk.yellow.bold`\nChecking for unextracted texts in code ... `,
   )
-  const results = await processFiles<typeof TsxExtractor, 'extractFile'>(
-    files,
-    extractorPath,
-    'extractFile',
-    params,
+  const sourceTexts = flatten(
+    (
+      await processFiles<typeof TsxExtractor, 'extractFile'>(
+        files,
+        extractorPath,
+        'extractFile',
+        params,
+      )
+    )
+      .filter((r) => r.ok)
+      .map((r) => r.sourceTexts!),
   )
 
-  const keyPathPairs = flatten(
-    keepTruthy(
-      results.map((r) => {
-        if (r.ok) {
-          return r.sourceTexts!.map((s) => {
-            const key = sourceTextToKey(s)
-            const path = `${displayPath(s.context.path)}:${
-              s.context.line || 1
-            }:${s.context.column || 1}`
-            return [key, path] as [string, string]
-          })
-        } else {
-          return undefined
-        }
-      }),
-    ),
-  )
-  const keyPathDict = fromEntries(keyPathPairs)
   const locales = params.locales || getExistingLocales(params.localeRoot)
   if (locales.length === 0) {
     process.stdout.write(
@@ -186,13 +153,22 @@ const checkExtract = async (
   let missingKeysExist = false
   for (const locale of locales) {
     const resource = getExistingResources(params.localeRoot, locale)
-    let missingKeys = excludeKeys(keyPathDict, resource)
+    const notExtracted = sourceTexts.filter((entry) => {
+      const key = sourceTextToKey(entry)
+      const exist = isKeyExisted(resource, entry.context.module, key)
+      return !exist
+    })
 
-    if (missingKeys.length) {
+    if (notExtracted.length) {
       missingKeysExist = true
-      console.info(chalk.green`${locale}: found ${missingKeys.length}:`)
-      const list = missingKeys.map((key) => {
-        return [key, keyPathDict[key]]
+      console.info(chalk.green`${locale}: found ${notExtracted.length}:`)
+      const list = notExtracted.map((entry) => {
+        const key = sourceTextToKey(entry)
+        const moduleName = entry.context.module
+        const path = `${displayPath(entry.context.path)}:${
+          entry.context.line || 1
+        }:${entry.context.column || 1}`
+        return [key, moduleName ?? '(root)', path]
       })
       displayTable(list)
     } else {
@@ -205,7 +181,7 @@ const checkExtract = async (
 
 const checkResource = async (
   files: string[],
-  params: CheckParams,
+  params: CheckOptions,
 ): Promise<boolean> => {
   process.stdout.write(
     chalk.yellow
@@ -224,15 +200,14 @@ const checkResource = async (
   let missingValue = false
   for (const locale of locales) {
     const resource = getExistingResources(params.localeRoot, locale)
-    let entriesWithoutValue = Object.entries(resource).filter(
-      ([key, value]) => value == null,
-    )
+    let entries = toSourceText(resource).filter((text) => text.value == null)
 
-    if (entriesWithoutValue.length) {
+    if (entries.length) {
       missingValue = true
-      console.info(chalk.green`${locale}: found ${entriesWithoutValue.length}:`)
-      const list = entriesWithoutValue.map(([key]) => {
-        return [key]
+      console.info(chalk.green`  ${locale}: found ${entries.length}:`)
+      const list = entries.map((e) => {
+        const key = sourceTextToKey(e)
+        return [key, e.context.module ?? '']
       })
       displayTable(list)
     } else {
@@ -243,7 +218,7 @@ const checkResource = async (
   return !missingValue
 }
 
-export const check = async (files: string[], params: CheckParams) => {
+export const check = async (files: string[], params: CheckOptions) => {
   const wrapOk = params.skipWrap || (await checkWrap(files, params))
   const extractOk = params.skipExtract || (await checkExtract(files, params))
   const resourceOk = params.skipResource || (await checkResource(files, params))

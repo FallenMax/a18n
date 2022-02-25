@@ -1,9 +1,9 @@
 import { LocaleResource } from '../types'
 
-type CompiledTemplate = (string | number)[]
+export type CompiledTemplate = (string | number)[]
 
-type CompiledResource = {
-  [K: string]: undefined | CompiledTemplate | CompiledResource
+export type TemplateCache = {
+  [K: string]: undefined | CompiledTemplate | TemplateCache
 }
 
 const SYMBOL_END =
@@ -11,9 +11,12 @@ const SYMBOL_END =
     ? Symbol.for('a18n-compiled')
     : '__$a18n-compiled'
 
-let cache: CompiledResource = {}
+// let cache: CompiledResource = {}
 
-const loadTemplate = (parts: string[]): CompiledTemplate | undefined => {
+const loadTemplate = (
+  parts: string[],
+  cache: TemplateCache,
+): CompiledTemplate | undefined => {
   let o = cache as any
   for (let i = 0; i < parts.length && o; i++) {
     o = o[parts[i]]
@@ -21,10 +24,14 @@ const loadTemplate = (parts: string[]): CompiledTemplate | undefined => {
   return o && o[SYMBOL_END]
 }
 
-const saveTemplate = (path: string[], template: CompiledTemplate) => {
+const saveTemplate = (
+  path: string[],
+  template: CompiledTemplate,
+  cache: TemplateCache,
+) => {
   let o: any = cache
   for (let i = 0; i < path.length && o; i++) {
-    o = o[path[i]] || (o[path[i]] = {} as CompiledResource)
+    o = o[path[i]] || (o[path[i]] = {} as TemplateCache)
   }
   o[SYMBOL_END] = template
   return template
@@ -63,14 +70,13 @@ const doCompile = (parts: string[], resource: LocaleResource) => {
  * will generate a compiled template: ["aa", 3, "bb", 1, "cc"]
  * and be cached under path [x,y,z,w,SYMBOL_END]
  */
-export const compile = (parts: string[], resource: LocaleResource) => {
-  return loadTemplate(parts) || saveTemplate(parts, doCompile(parts, resource))
-}
-
-export const clearCompileCache = () => {
-  cache = {}
-}
-
-export const DEBUG_getCompileCache = () => {
-  return cache
+export const compile = (
+  parts: string[],
+  resource: LocaleResource,
+  cache: TemplateCache,
+) => {
+  return (
+    loadTemplate(parts, cache) ||
+    saveTemplate(parts, doCompile(parts, resource), cache)
+  )
 }

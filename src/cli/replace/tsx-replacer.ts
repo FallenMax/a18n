@@ -1,8 +1,13 @@
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-import translator, { A18n } from '../../i18n/index'
+import { getA18n, LocaleResource } from '../../i18n/index'
+import { A18n } from '../../types'
 import { sourceTextToKey } from '../../util/locale'
-import { LIB_IDENTIFIER, LIB_METHOD_X_IDENTIFIER } from '../constants'
+import {
+  LIB_FACTORY_IDENTIFIER,
+  LIB_IDENTIFIER,
+  LIB_METHOD_X_IDENTIFIER,
+} from '../constants'
 import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
 
@@ -53,21 +58,50 @@ const translateTemplateLiteral = (
   return newTemplateLiteral
 }
 
+const extractModuleName = (ast: any): string | undefined => {
+  let moduleName: string | undefined
+  let moduleNameCount = 0
+  traverse(ast, {
+    enter(path) {
+      const node = path.node
+      switch (node.type) {
+        case 'CallExpression': {
+          if (t.isIdentifier(node.callee)) {
+            const isFactoryMethod = node.callee.name === LIB_FACTORY_IDENTIFIER
+            if (isFactoryMethod) {
+              moduleName = fromStringLiteral(node.arguments[1])
+              moduleNameCount++
+            }
+          }
+          break
+        }
+      }
+    },
+  })
+
+  if (moduleNameCount > 1) {
+    throw new Error('multiple module names found')
+  }
+  return moduleName
+}
+
 export const replaceCode = (
   code: string,
   options: {
     filePath?: string
     locale: string
-    resource: Record<string, string | null>
+    resource: LocaleResource
   },
 ): {
   output: string
 } => {
   const ast = parse(code)
   const { locale, resource, filePath } = options
+  const moduleName = extractModuleName(ast)
+  const a18n = getA18n('ns', moduleName) // ns not important here
 
-  translator.addLocaleResource(locale, resource)
-  translator.setLocale(locale)
+  a18n.addLocaleResource(locale, resource)
+  a18n.setLocale(locale)
 
   traverse(ast, {
     enter(path) {
@@ -84,7 +118,7 @@ export const replaceCode = (
             const arg0 = node.arguments[0]
             const text = fromStringLiteral(arg0)
             if (text != null) {
-              const translated = translator(text)
+              const translated = a18n(text)
               if (text !== translated) {
                 path.replaceWith(
                   t.callExpression(t.identifier(LIB_IDENTIFIER), [
@@ -113,7 +147,7 @@ export const replaceCode = (
           // a18n`something`
           if (t.isIdentifier(tag) && tag.name === LIB_IDENTIFIER) {
             const newTemplateLiteral = translateTemplateLiteral(
-              translator,
+              a18n,
               node.quasi,
             )
 
@@ -137,7 +171,7 @@ export const replaceCode = (
             tag.property.name === LIB_METHOD_X_IDENTIFIER
           ) {
             const newTemplateLiteral = translateTemplateLiteral(
-              translator,
+              a18n,
               node.quasi,
             )
 
@@ -187,7 +221,7 @@ export const replaceFile = (
   } catch (error) {
     return {
       ok: false,
-      error
+      error,
     }
   }
 }

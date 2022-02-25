@@ -1,89 +1,16 @@
-import { LocaleResource } from '../types'
-import { clearCompileCache, compile, DEBUG_getCompileCache } from './translator'
+import { A18n, LocaleResource } from '../types'
+import { compile, TemplateCache } from './translator'
 
 //-------------- Types --------------
 
-export interface A18n {
-  /**
-   * translate static text
-   *
-   * @example
-   * ```js
-   * a18n("Good morning")
-   * ```
-   */
-  (text: string): string
-
-  /**
-   * translate interpolated text (using ES6 Tagged Template syntax),
-   *
-   * @example
-   * ```js
-   * a18n`Hello ${userName}`
-   * ```
-   */
-  (parts: TemplateStringsArray, ...values: (string | number)[]): string
-
-  /**
-   * translate interpolated text into an array (using ES6 Tagged Template syntax),
-   *
-   * difference with a18n`some{value}`: dynamic parts can be of any type and will be kept as-is in returned array.
-   * this makes translating styled text easier, see example.
-   *
-   * @example
-   * ```jsx
-   * a18n.addLocaleResource('zh-CN', { 'Hello %s': '你好 %s'})
-   * a18n.setLocale('zh-CN')
-   *
-   * const greeting = <div>Hello <strong>Jimmy<strong></div>
-   *
-   * // after manually add a18n.x`` or modify auto wrapped code:
-   * const greeting = <div>{a18n.x`Hello ${<strong>Jimmy<strong>}`}</div>
-   *
-   * // will evaluate to:
-   * // <div>你好 <strong>Jimmy<strong></div>
-   * ```
-   */
-  x(parts: TemplateStringsArray, ...values: any[]): any[]
-
-  /**
-   * add resource for a language
-   *
-   * will merge with existed resource, value of same key will be overwritten
-   */
-  addLocaleResource(locale: string, resource: LocaleResource): void
-
-  /**
-   * set current language
-   */
-  setLocale(locale: string): void
-
-  /**
-   * get current language
-   */
-  getLocale(): string
-
-  /**
-   * get a instance for specified namespace
-   *
-   * resources of different namespaces are isolated
-   */
-  getA18n(namespace: string): A18n
-
-  /** reset current instance */
-  DEBUG_reset(resetSelfOnly?: boolean): void
-
-  DEBUG_print(): void
-}
-
-const DEFAULT_NAMESPACE = '__default_namespace__'
 // @ts-ignore
 const langs = typeof navigator !== 'undefined' ? navigator.languages || [] : []
 const DEFAULT_LOCALE = langs[0] || 'en-US'
-
-const ROOT = '__$a18n-instances'
+const DEFAULT_NAMESPACE = '__$a18n_namespace__'
+const ROOT_KEY = '__$a18n-global_resource__'
 
 declare var window: any
+
 /** globalThis */
 const _global =
   typeof globalThis !== 'undefined'
@@ -99,46 +26,87 @@ const _global =
         return {}
       })()
 
-type A18nInstances = {
-  [K: string]: A18n
-}
-let globalInstances: A18nInstances = _global[ROOT] || (_global[ROOT] = {})
-let localInstances: A18nInstances = {}
-
-const getA18n = (namespace: string): A18n => {
-  return globalInstances[namespace] || (globalInstances[namespace] = create())
-}
-
-const create = (): A18n => {
-  let currentLocale = DEFAULT_LOCALE
-  let resources: { [K: string]: LocaleResource } = {
-    [currentLocale]: {},
-  }
-  /** must always be a reference to resources, `addLocaleResource` depend on this  */
-  let resource: LocaleResource = resources[currentLocale]
-
-  const addLocaleResource: A18n['addLocaleResource'] = (locale, res) => {
-    if (!resources[locale]) {
-      resources[locale] = {}
+type GlobalResources = {
+  /** @note references to each namespace are expected not to change */
+  [Namespace: string]: {
+    currentLocale: string
+    cache: TemplateCache
+    resources: {
+      [Locale: string]: LocaleResource
     }
+  }
+}
+let root: GlobalResources = _global[ROOT_KEY] || (_global[ROOT_KEY] = {})
 
-    Object.assign(resources[locale], res)
-    clearCompileCache()
+const getA18n = (namespace: string, moduleName?: string): A18n => {
+  const ns =
+    root[namespace] ||
+    (root[namespace] = {
+      currentLocale: DEFAULT_LOCALE,
+      cache: {},
+      resources: {},
+    })
+
+  const clearCompileCache = () => {
+    ns.cache = {}
   }
 
   const setLocale: A18n['setLocale'] = (locale: string) => {
     if (typeof locale !== 'string') {
       throw new TypeError(`'locale' is expect to be a string`)
     }
-    currentLocale = locale
-    if (!resources[currentLocale]) {
-      resources[currentLocale] = {}
-    }
-    resource = resources[currentLocale]
+    if (ns.currentLocale === locale) return
+
+    ns.currentLocale = locale
     clearCompileCache()
   }
 
+  const addLocaleResource: A18n['addLocaleResource'] = (locale, res) => {
+    if (!ns.resources[locale]) {
+      ns.resources[locale] = res
+    } else {
+      Object.assign(ns.resources[locale], res)
+    }
+    clearCompileCache()
+  }
+
+  const getResource = (): LocaleResource => {
+    let resource =
+      ns.resources[ns.currentLocale] || (ns.resources[ns.currentLocale] = {})
+    if (moduleName != null) {
+      const moduleResource = resource[moduleName] || (resource[moduleName] = {})
+      if (!(moduleResource && typeof moduleResource === 'object')) {
+        console.error(
+          `[a18n] resource at ${namespace}::${moduleName} is not an object:`,
+          ns.resources,
+        )
+        resource = {}
+      } else {
+        resource = moduleResource
+      }
+    }
+    return resource
+  }
+  const getCache = (): TemplateCache => {
+    let cache = ns.cache
+    if (moduleName != null) {
+      const moduleCache = cache[moduleName] || (cache[moduleName] = {})
+      if (!(moduleCache && typeof moduleCache === 'object')) {
+        console.error(
+          `[a18n] cache at ${cache}::${moduleName} is not an object:`,
+          ns.resources,
+        )
+        cache = {}
+      } else {
+        cache = moduleCache as TemplateCache
+      }
+    }
+    return cache
+  }
+
   function a18n(text: any): string {
+    const resource = getResource()
+    const cache = getCache()
     if (typeof text === 'string') {
       const translated = resource[text]
       if (typeof translated === 'string') {
@@ -152,7 +120,7 @@ const create = (): A18n => {
         // shortcut for a18n`statictext`, due to misusage
         return a18n(text[0])
       }
-      const template = compile(text, resource)
+      const template = compile(text, resource, cache)
       const args = arguments
 
       let result = ''
@@ -169,12 +137,14 @@ const create = (): A18n => {
 
   //-------------- instance methods --------------
   a18n.x = function (text: any) {
+    const resource = getResource()
+    const cache = getCache()
     if (typeof text.length === 'number') {
       if (text.length === 1) {
         // shortcut for a18n.x`statictext`, due to misusage
         return [a18n(text)]
       }
-      const template = compile(text, resource)
+      const template = compile(text, resource, cache)
       const args = arguments
 
       let result = []
@@ -190,44 +160,30 @@ const create = (): A18n => {
   }
   a18n.addLocaleResource = addLocaleResource
   a18n.setLocale = setLocale
-  a18n.getLocale = () => currentLocale
+  a18n.getLocale = () => ns.currentLocale || DEFAULT_LOCALE
 
   //-------------- static methods --------------
   a18n.getA18n = getA18n
 
-  a18n.DEBUG_reset = (resetSelfOnly = false) => {
-    resources = {}
-    resource = {}
-    currentLocale = DEFAULT_LOCALE
+  a18n.DEBUG_reset = () => {
+    Object.keys(root).forEach((namespace) => {
+      const ns = root[namespace]
+      ns.currentLocale = DEFAULT_LOCALE
+      ns.resources = {}
+      ns.cache = {}
+    })
     clearCompileCache()
-
-    if (!resetSelfOnly) {
-      const instances = ([] as A18n[])
-        .concat(Object.values(globalInstances))
-        .concat(Object.values(localInstances))
-      instances.forEach((instance) => {
-        if (instance !== a18n) {
-          instance.DEBUG_reset(true)
-        }
-      })
-    }
   }
   a18n.DEBUG_print = () => {
-    const compileCache = DEBUG_getCompileCache()
-    console.log(
-      JSON.stringify(
-        { currentLocale, resources, resource, compileCache },
-        null,
-        2,
-      ),
-    )
-    return { currentLocale, resources, resource, compileCache }
+    const obj = { ns, resource: getResource(), root }
+    console.log(JSON.stringify(obj, null, 2))
+    return obj
   }
 
   return a18n
 }
 
-const a18n = (localInstances[DEFAULT_NAMESPACE] = create())
+const a18n = getA18n(DEFAULT_NAMESPACE)
 
 module.exports = a18n
 

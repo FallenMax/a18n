@@ -4,10 +4,9 @@ const wrapperPath = require.resolve('./wrap/tsx-wrapper')
 
 export const wrap = async (
   files: string[],
-  params: {
+  params: TsxWrapper.WrapOptions & {
     write: boolean
     exclude?: string
-    namespace: string | undefined
     silent?: boolean
   },
 ) => {

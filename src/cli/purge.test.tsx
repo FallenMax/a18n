@@ -25,6 +25,7 @@ describe('purge', () => {
   test('remove a18n setup methods', () => {
     const source = `const { getA18n } = require('a18n')
 const a18n__ = getA18n('your-namespace')
+const a18n2__ = getA18n('your-namespace', 'my-module')
 
 /* @a18n-ignore-file */
 // @a18n-ignore

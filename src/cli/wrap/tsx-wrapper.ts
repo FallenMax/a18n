@@ -1,7 +1,9 @@
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import CJK from 'cjk-regex'
+import { relative } from 'path'
 import { SourceTextWithContext } from '../../types'
+import { assertNever } from '../../util/assert-never'
 import {
   LIB_FACTORY_IDENTIFIER,
   LIB_IDENTIFIER,
@@ -12,6 +14,8 @@ import {
 import { toDynamicText, toStaticText } from '../extract/tsx-extractor'
 import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
+import assert = require('assert')
+import path = require('path')
 
 const removeImportRequireFactory = (ast: any, lines: string[]) => {
   traverse(ast, {
@@ -80,18 +84,48 @@ const fromStringLiteral = (
     return undefined
   }
 }
+export type ModuleNameTemplate = 'filePath' | 'fileName'
+
+export interface WrapOptions {
+  basePath?: string
+  namespace?: string
+  moduleName?: ModuleNameTemplate
+  moduleNameUpdate?: boolean
+  checkOnly?: boolean
+}
 
 export const wrapCode = (
   code: string,
-  options: {
+  options: WrapOptions & {
     filePath?: string
-    namespace?: string
-    checkOnly?: boolean
   },
 ): {
   output: string
   sourceTexts: SourceTextWithContext[]
 } => {
+  let newModuleName: string | undefined
+  if (options.moduleName) {
+    const { filePath, basePath } = options
+    assert(filePath, 'filePath is required when moduleName is specified')
+    assert(basePath, 'basePath is required when moduleName is specified')
+    const { dir, base, name, ext } = path.parse(filePath)
+    switch (options.moduleName) {
+      case 'fileName': {
+        newModuleName = name
+        break
+      }
+      case 'filePath':
+        const relativeDir = relative(basePath, dir)
+        newModuleName = (relativeDir + '/' + name)
+          .split(/\/|\\/)
+          .filter(Boolean)
+          .join('/')
+        break
+      default:
+        return assertNever(options.moduleName)
+    }
+  }
+
   if (code.includes(LIB_IGNORE_FILE)) {
     return {
       output: code,
@@ -110,6 +144,7 @@ export const wrapCode = (
     imported: false,
     required: false,
     namespace: undefined as string | undefined,
+    module: undefined as string | undefined,
   }
 
   let importStatementCount = 0
@@ -275,10 +310,13 @@ export const wrapCode = (
                 libImportStatus.required = true
               }
 
-              const isDefineLib = node.callee.name === LIB_FACTORY_IDENTIFIER
-              if (isDefineLib) {
+              const isFactoryMethod =
+                node.callee.name === LIB_FACTORY_IDENTIFIER
+              if (isFactoryMethod) {
                 const namespace = fromStringLiteral(node.arguments[0])
+                const moduleName = fromStringLiteral(node.arguments[1])
                 libImportStatus.namespace = namespace
+                libImportStatus.module = moduleName
               }
             }
             break
@@ -301,10 +339,13 @@ export const wrapCode = (
   }
 
   let output: string
-  if (
+
+  const shouldKeepFactoryStatement =
     (libImportStatus.imported || libImportStatus.required) &&
-    libImportStatus.namespace == namespace
-  ) {
+    libImportStatus.namespace == namespace &&
+    (libImportStatus.module === newModuleName ||
+      (libImportStatus.module && !options.moduleNameUpdate))
+  if (shouldKeepFactoryStatement) {
     output = print(ast)
   } else {
     removeImportRequireFactory(ast, lines)
@@ -319,7 +360,9 @@ export const wrapCode = (
       ? `import ${importDeclarators} from '${LIB_MODULE}'\n`
       : `const ${importDeclarators} = require('${LIB_MODULE}')\n`
     const factoryStatement = namespace
-      ? `const a18n = ${LIB_FACTORY_IDENTIFIER}('${namespace}')\n`
+      ? newModuleName
+        ? `const a18n = ${LIB_FACTORY_IDENTIFIER}('${namespace}', '${newModuleName}')\n`
+        : `const a18n = ${LIB_FACTORY_IDENTIFIER}('${namespace}')\n`
       : ''
     output = importStatement + factoryStatement + output
   }
@@ -332,23 +375,19 @@ export const wrapCode = (
 
 export const wrapFile = (
   filePath: string,
-  params: {
+  params: WrapOptions & {
     write: boolean
-    namespace?: string
-    checkOnly?: boolean
   },
 ) => {
   try {
-    const { namespace, checkOnly } = params
     const content = readFile(filePath)
     const { output: newContent, sourceTexts } = wrapCode(content, {
       filePath,
-      namespace,
-      checkOnly,
+      ...params,
     })
 
     const changed = newContent !== content
-    if (changed && params.write && !checkOnly) {
+    if (changed && params.write && !params.checkOnly) {
       writeFile(filePath, newContent)
     }
     return {

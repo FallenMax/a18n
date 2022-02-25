@@ -23,6 +23,7 @@ const args = parseArgs(process.argv.slice(2), {
     'skip-extract',
     'skip-resource',
     'keep-unused',
+    'module-name-update',
   ],
 })
 const [command, ...restArgs] = args._
@@ -57,9 +58,19 @@ OPTIONS:
     file/dir/glob, code files to be processed. multiple entries are seperated by comma
   '--write':
     write files in place. if not provided, a18n will perform a dry run and print files to be modified
-  '--namespace':
+  '--namespace=':
     a name that uniquely identifies current project, this helps avoid resource conflicting with other dependencies that also uses "a18n"
-  '--exclude':
+  '--module-name=':
+    generate module name using provided template, if no default module name is provided. requires '--namespace' to be provided
+    for example, running "a18n wrap a/b/c/foo.ts --namespace=my-ns --module-name=filePath" will insert: 
+      "const a18n = getA18n('my-ns', 'a/b/c/foo')"
+    and this a18n instance will use 'resource['a/b/c/foo']' instead of 'resource' when translating in the runtime. 
+    available template values are:
+      'filePath': file extension is ignored, "a/b/c/foo.ts" will be "a/b/c/foo"
+      'fileName': file extension is ignored, "a/b/c/foo.ts" will be "foo"
+  '--module-name-update':
+    when using '--module-name', update existed module name to new name.
+  '--exclude=':
     directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':
     do not print files being processed (this will be ignored when '--write' is not present)
@@ -72,14 +83,27 @@ NOTE:
     )
     return
   }
+  if (args['module-name'] && !args['namespace']) {
+    console.error('`--module-name` requires `--namespace`')
+    process.exit(ExitCode.InvalidArgument)
+  }
+  if (args['module-name-update'] && !args['module-name']) {
+    console.error('`--module-name-update` requires `--module-name`')
+    process.exit(ExitCode.InvalidArgument)
+  }
+
   if (!args.write && args.silent) {
     args.silent = false
   }
   await wrap(files, {
     write: args.write,
     exclude: args.exclude,
-    namespace: args.namespace,
     silent: args.silent,
+
+    basePath: process.cwd(),
+    namespace: args.namespace,
+    moduleName: args.moduleName,
+    moduleNameUpdate: args.moduleNameUpdate,
   })
 }
 
@@ -97,7 +121,8 @@ const handleExtract = async () => {
       `a18n extract <path> <localeRoot> [<options>]
 
 DESCRIPTION
-  Parse code files from given <path>, extract texts to be translated (which are wrapped in 'a18n()/a18n\`\`') to <localeRoot> directory.
+  Parse code files from given <path>, extract texts to be translated (which are wrapped in 'a18n()/a18n\`\`') to <localeRoot> directory,
+  Existed translation will be reused, unused keys will be dropped by default.
   Stdin is read as file list if it is piped to a18n and no <path> is given.
 
 OPTIONS:
@@ -105,10 +130,16 @@ OPTIONS:
     file/dir/glob, code files to be processed. multiple entries are seperated by comma
   '<localeRoot'>:
     directory to store locale resource files
-  '--locales':
+  '--locales=':
     languages to be exported, separated by comma. example: 'da,de-AT,de-CH,de-DE'
   '--keep-unused':
     keep unused texts/translations even if they are not found in code being extracted.
+  '--reuse-from=':
+    where to look for translation from existed resource (in locale resource folder):
+      'same-module-then-root': this is default, will reuse translation from same module, if not found, then from root
+      'same-module': will only reuse translation from same module
+      'no': do not reuse translation, which means all values will be "null" after extraction
+      'all': will reuse translation from same module, then root, then other modules
   '--silent':
     do not print files being processed
 `,
@@ -132,7 +163,8 @@ OPTIONS:
       : DEFAULT_LOCALES,
     exclude: args.exclude,
     silent: args.silent,
-    keepUnused: args['keep-unused'],
+    keepUnused: args.keepUnused,
+    reuseFrom: args.reuseFrom,
   })
 }
 
@@ -152,7 +184,7 @@ OPTIONS:
     file/dir/glob, code files to be processed. multiple entries are seperated by comma
   '--write':
     write files in place. if not provided, a18n will perform a dry run and print files to be modified
-  '--exclude':
+  '--exclude=':
     directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':
     do not print files being processed (this will be ignored when '--write' is not present)
@@ -215,7 +247,7 @@ OPTIONS:
     do not check for unextracted texts
   '--skip-resource':
     do not check for missing translation
-  '--exclude':
+  '--exclude=':
     directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
 `,
     )
@@ -277,7 +309,7 @@ OPTIONS:
     target language to be translated to, example: 'en-US'. corresponding resources file (en-US.json) is expected to exist under <localeRoot>
   '--write':
     write files in place. if not provided, a18n will perform a dry run and print files to be modified
-  '--exclude':
+  '--exclude=':
     directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':
     do not print files being processed (this will be ignored when '--write' is not present)
@@ -342,5 +374,5 @@ main()
   })
   .catch((e) => {
     console.error(e)
-    process.exit(ExitCode.Unknown)
+    process.exit(ExitCode.UnknownError)
   })

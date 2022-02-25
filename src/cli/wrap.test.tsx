@@ -228,4 +228,87 @@ const a18n = getA18n('my-namespace')
 const s = a18n('中文')`)
     })
   })
+  describe('module', () => {
+    test(`add moduleName from filePath`, () => {
+      expect(
+        wrapCode(`const s = '中文'`, {
+          namespace: 'my-namespace',
+          moduleName: 'filePath',
+          filePath: '/root/a/b/c/foo.ts',
+          basePath: '/root',
+        }),
+      ).toBe(`import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace', 'a/b/c/foo')
+const s = a18n('中文')`)
+    })
+
+    test(`add moduleName from fileName (first-time)`, () => {
+      expect(
+        wrapCode(`const s = '中文'`, {
+          namespace: 'my-namespace',
+          moduleName: 'fileName',
+          filePath: '/root/a/b/c/foo.ts',
+          basePath: '/root',
+        }),
+      ).toBe(`import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace', 'foo')
+const s = a18n('中文')`)
+    })
+
+    test(`add moduleName from fileName (already have namespace)`, () => {
+      expect(
+        wrapCode(
+          `import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace')
+const s = a18n('中文')`,
+          {
+            namespace: 'my-namespace',
+            moduleName: 'fileName',
+            filePath: '/root/a/b/c/foo.ts',
+            basePath: '/root',
+          },
+        ),
+      ).toBe(`import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace', 'foo')
+const s = a18n('中文')`)
+    })
+
+    test(`keep current moduleName (without --module-name-update)`, () => {
+      expect(
+        wrapCode(
+          `import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace', 'bar')
+const s = a18n('中文')`,
+          {
+            namespace: 'my-namespace',
+            moduleName: 'fileName',
+            moduleNameUpdate: false,
+            filePath: '/root/a/b/c/foo.ts',
+            basePath: '/root',
+          },
+        ),
+      ).toBe(`import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace', 'bar')
+const s = a18n('中文')`)
+    })
+
+    test(`update current moduleName (with --module-name-update)`, () => {
+      expect(
+        wrapCode(
+          `import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace', 'bar')
+const s = a18n('中文')`,
+          {
+            namespace: 'my-namespace',
+            moduleName: 'fileName',
+            moduleNameUpdate: true,
+            filePath: '/root/a/b/c/foo.ts',
+            basePath: '/root',
+          },
+        ),
+      ).toBe(`import { getA18n } from 'a18n'
+const a18n = getA18n('my-namespace', 'foo')
+const s = a18n('中文')`)
+    })
+  })
 })
