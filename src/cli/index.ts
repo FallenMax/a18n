@@ -136,10 +136,10 @@ OPTIONS:
     keep unused texts/translations even if they are not found in code being extracted.
   '--reuse-from=':
     where to look for translation from existed resource (in locale resource folder):
-      'same-module-then-root': this is default, will reuse translation from same module, if not found, then from root
+      'all': (default) will reuse translation from same module, then root, then other modules
+      'same-module-then-root': will reuse translation from same module, if not found, then from root
       'same-module': will only reuse translation from same module
       'no': do not reuse translation, which means all values will be "null" after extraction
-      'all': will reuse translation from same module, then root, then other modules
   '--silent':
     do not print files being processed
 `,

@@ -33,7 +33,7 @@ export const createResource = ({
   sourceTexts,
   old,
   keepUnused,
-  reuseFrom = 'same-module-then-root',
+  reuseFrom = 'all',
 }: {
   sourceTexts: SourceTextWithContext[]
   old: LocaleResource

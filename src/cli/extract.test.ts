@@ -222,6 +222,43 @@ const s = a18n('中文')`,
         },
       })
     })
+
+    test('reuseFrom defaults to all', () => {
+      expect(
+        createResource({
+          sourceTexts: toSourceText({
+            d: null,
+            c: 'c',
+            x: {
+              a: null,
+              b: null,
+              c: null,
+            },
+          }),
+          old: {
+            b: 'b',
+            d: 'd',
+            unused: 'unused',
+            x: {
+              a: 'xa',
+              unused: 'unused',
+            },
+            y: {
+              c: 'yc',
+              b: 'yb',
+            },
+          },
+        }),
+      ).toEqual({
+        d: 'd',
+        c: 'yc',
+        x: {
+          a: 'xa',
+          b: 'b',
+          c: 'yc',
+        },
+      })
+    })
   })
 
   test('format: json', () => {
