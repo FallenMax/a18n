@@ -12,6 +12,7 @@ import {
   LIB_MODULE,
 } from '../constants'
 import { toDynamicText, toStaticText } from '../extract/tsx-extractor'
+import { extractModuleName } from '../module_name'
 import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
 import assert = require('assert')
@@ -70,10 +71,6 @@ export const needTranslate = (str: string): boolean => {
   return cjkRegex.test(str)
 }
 
-const isCommentLine = (line: string | null): boolean => {
-  return Boolean(line && /^\s*(\*|\/\/|\/\*)/gi.test(line))
-}
-
 const fromStringLiteral = (
   node: object | null | undefined,
 ): undefined | string => {
@@ -96,45 +93,51 @@ export interface WrapOptions {
 
 export const wrapCode = (
   code: string,
-  options: WrapOptions & {
+  {
+    filePath,
+    basePath,
+    moduleName,
+    namespace,
+    checkOnly = false,
+    moduleNameUpdate = true,
+  }: WrapOptions & {
     filePath?: string
   },
 ): {
   output: string
   sourceTexts: SourceTextWithContext[]
 } => {
-  let newModuleName: string | undefined
-  if (options.moduleName) {
-    const { filePath, basePath } = options
-    assert(filePath, 'filePath is required when moduleName is specified')
-    assert(basePath, 'basePath is required when moduleName is specified')
-    const { dir, base, name, ext } = path.parse(filePath)
-    switch (options.moduleName) {
-      case 'fileName': {
-        newModuleName = name
-        break
-      }
-      case 'filePath':
-        const relativeDir = relative(basePath, dir)
-        newModuleName = (relativeDir + '/' + name)
-          .split(/\/|\\/)
-          .filter(Boolean)
-          .join('/')
-        break
-      default:
-        return assertNever(options.moduleName)
-    }
-  }
-
   if (code.includes(LIB_IGNORE_FILE)) {
     return {
       output: code,
       sourceTexts: [],
     }
   }
-  const { namespace, checkOnly, filePath = '' } = options
 
   const ast = parse(code)
+  const existModuleName = extractModuleName(ast)
+  const newModuleName: string | undefined = (() => {
+    if (!moduleName) return existModuleName
+    if (existModuleName && !moduleNameUpdate) return existModuleName
+
+    assert(filePath, 'filePath is required when moduleName is specified')
+    assert(basePath, 'basePath is required when moduleName is specified')
+    const { dir, base, name, ext } = path.parse(filePath)
+    switch (moduleName) {
+      case 'fileName': {
+        return name
+      }
+      case 'filePath':
+        const relativeDir = relative(basePath, dir)
+        return (relativeDir + '/' + name)
+          .split(/\/|\\/)
+          .filter(Boolean)
+          .join('/')
+        break
+      default:
+        return assertNever(moduleName)
+    }
+  })()
 
   let libUsed = false
   const markLibUsed = (): void => {
@@ -144,7 +147,6 @@ export const wrapCode = (
     imported: false,
     required: false,
     namespace: undefined as string | undefined,
-    module: undefined as string | undefined,
   }
 
   let importStatementCount = 0
@@ -154,10 +156,14 @@ export const wrapCode = (
 
   let sourceTexts = [] as SourceTextWithContext[]
   const addStaticText = (node: t.Node, text: string): void => {
-    sourceTexts.push(toStaticText(node, text, filePath, lines))
+    sourceTexts.push(
+      toStaticText(node, text, filePath ?? '', lines, newModuleName),
+    )
   }
   const addDynamicText = (node: t.Node, parts: string[]) => {
-    sourceTexts.push(toDynamicText(node, parts, filePath, lines))
+    sourceTexts.push(
+      toDynamicText(node, parts, filePath ?? '', lines, newModuleName),
+    )
   }
 
   traverse(ast, {
@@ -314,9 +320,7 @@ export const wrapCode = (
                 node.callee.name === LIB_FACTORY_IDENTIFIER
               if (isFactoryMethod) {
                 const namespace = fromStringLiteral(node.arguments[0])
-                const moduleName = fromStringLiteral(node.arguments[1])
                 libImportStatus.namespace = namespace
-                libImportStatus.module = moduleName
               }
             }
             break
@@ -343,8 +347,7 @@ export const wrapCode = (
   const shouldKeepFactoryStatement =
     (libImportStatus.imported || libImportStatus.required) &&
     libImportStatus.namespace == namespace &&
-    (libImportStatus.module === newModuleName ||
-      (libImportStatus.module && !options.moduleNameUpdate))
+    newModuleName === existModuleName
   if (shouldKeepFactoryStatement) {
     output = print(ast)
   } else {

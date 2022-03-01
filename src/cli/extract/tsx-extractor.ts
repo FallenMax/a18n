@@ -1,7 +1,8 @@
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import { SourceTextWithContext } from '../../types'
-import { LIB_FACTORY_IDENTIFIER, LIB_IDENTIFIER } from '../constants'
+import { LIB_IDENTIFIER } from '../constants'
+import { extractModuleName } from '../module_name'
 import { parse } from '../util/ast'
 import { readFile } from '../util/file'
 
@@ -21,6 +22,7 @@ export const toStaticText = (
   text: string,
   filePath: string,
   lines: string[],
+  moduleName: string | undefined,
 ): SourceTextWithContext => {
   const loc = node.loc
   const line = loc ? loc.start.line : undefined
@@ -32,6 +34,7 @@ export const toStaticText = (
       path: filePath,
       line,
       column,
+      module: moduleName,
       text: loc ? lines[loc.start.line] : undefined,
     },
   }
@@ -41,6 +44,7 @@ export const toDynamicText = (
   parts: string[],
   filePath: string,
   lines: string[],
+  moduleName: string | undefined,
 ): SourceTextWithContext => {
   const loc = node.loc
   const line = loc ? loc.start.line : undefined
@@ -52,6 +56,7 @@ export const toDynamicText = (
       path: filePath,
       line,
       column,
+      module: moduleName,
       text: loc ? lines[loc.start.line] : undefined,
     },
   }
@@ -62,17 +67,17 @@ export const extractCode = (
   filePath: string,
 ): SourceTextWithContext[] => {
   let sourceTexts: SourceTextWithContext[] = []
-  let moduleName: string | undefined
-  let moduleNameCount = 0
-
   const ast = parse(code)
+
+  const moduleName = extractModuleName(ast)
+
   const lines = code.split('\n')
 
   const addStaticText = (node: t.Node, text: string): void => {
-    sourceTexts.push(toStaticText(node, text, filePath, lines))
+    sourceTexts.push(toStaticText(node, text, filePath, lines, moduleName))
   }
   const addDynamicText = (node: t.Node, parts: string[]) => {
-    sourceTexts.push(toDynamicText(node, parts, filePath, lines))
+    sourceTexts.push(toDynamicText(node, parts, filePath, lines, moduleName))
   }
 
   traverse(ast, {
@@ -100,12 +105,6 @@ export const extractCode = (
                   `file: ${line}`,
                 )
               }
-            }
-
-            const isFactoryMethod = node.callee.name === LIB_FACTORY_IDENTIFIER
-            if (isFactoryMethod) {
-              moduleName = fromStringLiteral(node.arguments[1])
-              moduleNameCount++
             }
           }
 
@@ -140,15 +139,6 @@ export const extractCode = (
         }
       }
     },
-  })
-
-  if (moduleNameCount > 1) {
-    throw new Error('multiple module names found')
-  }
-
-  // append moduleName for each entry
-  sourceTexts.forEach((s) => {
-    s.context.module = moduleName
   })
 
   return sourceTexts

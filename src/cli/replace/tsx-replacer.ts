@@ -3,11 +3,8 @@ import * as t from '@babel/types'
 import { getA18n, LocaleResource } from '../../i18n/index'
 import { A18n } from '../../types'
 import { sourceTextToKey } from '../../util/locale'
-import {
-  LIB_FACTORY_IDENTIFIER,
-  LIB_IDENTIFIER,
-  LIB_METHOD_X_IDENTIFIER,
-} from '../constants'
+import { LIB_IDENTIFIER, LIB_METHOD_X_IDENTIFIER } from '../constants'
+import { extractModuleName } from '../module_name'
 import { parse, print } from '../util/ast'
 import { readFile, writeFile } from '../util/file'
 
@@ -56,33 +53,6 @@ const translateTemplateLiteral = (
     newExpressions, // TODO
   )
   return newTemplateLiteral
-}
-
-const extractModuleName = (ast: any): string | undefined => {
-  let moduleName: string | undefined
-  let moduleNameCount = 0
-  traverse(ast, {
-    enter(path) {
-      const node = path.node
-      switch (node.type) {
-        case 'CallExpression': {
-          if (t.isIdentifier(node.callee)) {
-            const isFactoryMethod = node.callee.name === LIB_FACTORY_IDENTIFIER
-            if (isFactoryMethod) {
-              moduleName = fromStringLiteral(node.arguments[1])
-              moduleNameCount++
-            }
-          }
-          break
-        }
-      }
-    },
-  })
-
-  if (moduleNameCount > 1) {
-    throw new Error('multiple module names found')
-  }
-  return moduleName
 }
 
 export const replaceCode = (

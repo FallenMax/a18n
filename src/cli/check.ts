@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { readdirSync } from 'fs'
 import { join, relative } from 'path'
-import { LocaleResource } from '../types'
+import { LocaleResource, SourceText, SourceTextWithContext } from '../types'
 import { sourceTextToKey } from '../util/locale'
 import { toSourceText } from './extract'
 import type * as TsxExtractor from './extract/tsx-extractor'
@@ -18,11 +18,29 @@ const wrapperPath = require.resolve('./wrap/tsx-wrapper')
 
 //-------------- Utils --------------
 
-const displayTable = (xs: string[][]) => {
-  xs.forEach((x) => {
-    console.info(
-      x.map((str, i) => (i === 0 ? str : chalk.gray(str))).join('  '),
-    )
+const printSourceTexts = (
+  sourceTexts: (SourceText | SourceTextWithContext)[],
+) => {
+  const formatted = sourceTexts.map((s) => {
+    const key = sourceTextToKey(s)
+    const module = 'context' in s ? s.context.module ?? '' : ''
+    const path =
+      'context' in s && s.context.path
+        ? `${displayPath(s.context.path)}:${s.context.line || 1}:${
+            s.context.column || 1
+          }` ?? ''
+        : ''
+    return { key, module, path }
+  })
+  const hasModule = formatted.some((s) => s.module !== '')
+  const hasPath = formatted.some((s) => s.path !== '')
+
+  formatted.forEach((f) => {
+    if (hasModule) {
+      console.info(`${chalk.gray(f.module)}\t${f.key}\t${chalk.gray(f.path)}`)
+    } else {
+      console.info(`${f.key}\t${chalk.gray(f.path)}`)
+    }
   })
 }
 
@@ -103,16 +121,7 @@ const checkWrap = async (
   )
   if (sourceTexts.length) {
     process.stdout.write(chalk.yellow.bold`found ${sourceTexts.length}:\n`)
-    const list = sourceTexts.map((t) => {
-      const key = sourceTextToKey(t)
-      return [
-        key,
-        `${displayPath(t.context.path)}:${t.context.line || 1}:${
-          t.context.column || 1
-        }`,
-      ]
-    })
-    displayTable(list)
+    printSourceTexts(sourceTexts)
     return false
   } else {
     process.stdout.write(chalk.yellow.bold`ok\n`)
@@ -162,15 +171,7 @@ const checkExtract = async (
     if (notExtracted.length) {
       missingKeysExist = true
       console.info(chalk.green`${locale}: found ${notExtracted.length}:`)
-      const list = notExtracted.map((entry) => {
-        const key = sourceTextToKey(entry)
-        const moduleName = entry.context.module
-        const path = `${displayPath(entry.context.path)}:${
-          entry.context.line || 1
-        }:${entry.context.column || 1}`
-        return [key, moduleName ?? '(root)', path]
-      })
-      displayTable(list)
+      printSourceTexts(notExtracted)
     } else {
       console.info(chalk.green`${locale}: ok`)
     }
@@ -204,14 +205,10 @@ const checkResource = async (
 
     if (entries.length) {
       missingValue = true
-      console.info(chalk.green`  ${locale}: found ${entries.length}:`)
-      const list = entries.map((e) => {
-        const key = sourceTextToKey(e)
-        return [key, e.context.module ?? '']
-      })
-      displayTable(list)
+      console.info(chalk.green`${locale}: found ${entries.length}:`)
+      printSourceTexts(entries)
     } else {
-      console.info(chalk.green`  ${locale}: ok`)
+      console.info(chalk.green`${locale}: ok`)
     }
   }
 

@@ -69,7 +69,7 @@ OPTIONS:
       'filePath': file extension is ignored, "a/b/c/foo.ts" will be "a/b/c/foo"
       'fileName': file extension is ignored, "a/b/c/foo.ts" will be "foo"
   '--module-name-update':
-    when using '--module-name', update existed module name to new name.
+    when using '--module-name', update existed module name to new name, default is true.
   '--exclude=':
     directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':
