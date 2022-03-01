@@ -3,11 +3,13 @@ import { compile, TemplateCache } from './translator'
 
 //-------------- Types --------------
 
+const RESOURCE_VERSION = '3'
+
 // @ts-ignore
 const langs = typeof navigator !== 'undefined' ? navigator.languages || [] : []
 const DEFAULT_LOCALE = langs[0] || 'en-US'
 const DEFAULT_NAMESPACE = '__$a18n_namespace__'
-const ROOT_KEY = '__$a18n-global_resource__'
+const ROOT_KEY = `__$a18n-global_resource_${RESOURCE_VERSION}__`
 
 declare var window: any
 
