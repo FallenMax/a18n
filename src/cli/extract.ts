@@ -1,11 +1,11 @@
 import mkdirp from 'mkdirp'
 import { join } from 'path'
-import { FormattedText, LocaleResource, SourceTextWithContext } from '../types'
+import { FormattedText, LocaleResource, SourceText } from '../types'
 import { assertNever } from '../util/assert-never'
 import { isObject } from '../util/is_object'
-import { sourceTextToKey } from '../util/locale'
 import type * as TsxExtractor from './extract/tsx-extractor'
 import { getFormatted, putFormatted } from './resource'
+import { appendKey } from './source_to_key'
 import { isFile, readFile, writeFile } from './util/file'
 import { flatten } from './util/flatten'
 import { keepTruthy } from './util/keep_truthty'
@@ -35,7 +35,7 @@ export const createResource = ({
   keepUnused,
   reuseFrom = 'all',
 }: {
-  sourceTexts: SourceTextWithContext[]
+  sourceTexts: SourceText[]
   old: LocaleResource
   keepUnused?: boolean
   reuseFrom?: ReuseStrategy
@@ -59,8 +59,8 @@ export const createResource = ({
   }
 
   sourceTexts.forEach((sourceText) => {
-    const key = sourceTextToKey(sourceText)
-    const moduleName = sourceText.context.module
+    const { key } = sourceText
+    const moduleName = sourceText.module
     let existed: FormattedText = null
     switch (reuseFrom) {
       case 'no':
@@ -94,29 +94,34 @@ export const createResource = ({
   return resource
 }
 
-export const toSourceText = (
-  o: LocaleResource,
-  file = '',
-): SourceTextWithContext[] => {
-  let xs: SourceTextWithContext[] = []
+export const toSourceText = (o: LocaleResource, file = ''): SourceText[] => {
+  let xs: SourceText[] = []
   Object.keys(o).forEach((keyOrMod) => {
     const value = o[keyOrMod]
     if (isObject(value)) {
       Object.keys(value).forEach((k) => {
-        xs.push({
-          type: 'string',
-          text: k,
-          value: value[k] ?? null,
-          context: { path: file, module: keyOrMod },
-        })
+        xs.push(
+          appendKey({
+            key: '',
+            type: 'string',
+            text: k,
+            value: value[k] ?? null,
+            path: file,
+            module: keyOrMod,
+          }),
+        )
       })
     } else {
-      xs.push({
-        type: 'string',
-        text: keyOrMod,
-        value: value ?? null,
-        context: { path: file, module: undefined },
-      })
+      xs.push(
+        appendKey({
+          key: '',
+          type: 'string',
+          text: keyOrMod,
+          value: value ?? null,
+          path: file,
+          module: undefined,
+        }),
+      )
     }
   })
   return xs

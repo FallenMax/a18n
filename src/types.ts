@@ -1,24 +1,22 @@
-/** contextual information of source text */
-export type SourceContext = {
-  path: string
-  module?: string | undefined
-  line?: number | undefined
-  column?: number | undefined
-  text?: string | undefined
-}
-
-/** text to be translated */
-export type SourceText =
-  | { type: 'string'; text: string; id?: string }
+export type SourceTextRaw =
+  | {
+      type: 'string'
+      text: string
+      id?: string
+    }
   | {
       type: 'interpolated'
       textParts: readonly string[]
       id?: string
     }
 
-export type SourceTextWithContext = SourceText & {
+export type SourceText = SourceTextRaw & {
+  key: string
+  path?: string
+  module?: string | undefined
+  line?: number | undefined
+  column?: number | undefined
   value?: FormattedText
-  context: SourceContext
 }
 
 export type FormattedText = null | string

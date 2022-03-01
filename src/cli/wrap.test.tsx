@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import * as prettier from 'prettier'
-import { sourceTextToKey } from '../util/locale'
+import { sourceTextToKey } from './source_to_key'
 import { needTranslate, wrapCode as wrap } from './wrap/tsx-wrapper'
 
 const format = (str: string) => {

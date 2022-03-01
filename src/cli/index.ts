@@ -241,6 +241,8 @@ OPTIONS:
     directory to store locale resource files
   '--locales=<localeRoot>':
     specify locales to check, by default all locale files under <localeRoot> are checked
+  '--json':
+    print result in json format
   '--skip-wrap':
     do not check for unwrapped texts
   '--skip-extract':
@@ -271,6 +273,7 @@ OPTIONS:
     skipWrap: args['skip-wrap'],
     skipExtract: args['skip-extract'],
     skipResource: args['skip-resource'],
+    json: args['json'],
     exclude: args.exclude,
     silent: true,
   })

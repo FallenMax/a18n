@@ -1,8 +1,9 @@
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-import { SourceTextWithContext } from '../../types'
+import { SourceText } from '../../types'
 import { LIB_IDENTIFIER } from '../constants'
 import { extractModuleName } from '../module_name'
+import { appendKey } from '../source_to_key'
 import { parse } from '../util/ast'
 import { readFile } from '../util/file'
 
@@ -23,21 +24,19 @@ export const toStaticText = (
   filePath: string,
   lines: string[],
   moduleName: string | undefined,
-): SourceTextWithContext => {
+): SourceText => {
   const loc = node.loc
   const line = loc ? loc.start.line : undefined
   const column = loc ? loc.start.column : undefined
-  return {
+  return appendKey({
+    key: '',
     type: 'string',
     text: text,
-    context: {
-      path: filePath,
-      line,
-      column,
-      module: moduleName,
-      text: loc ? lines[loc.start.line] : undefined,
-    },
-  }
+    path: filePath,
+    line,
+    column,
+    module: moduleName,
+  })
 }
 export const toDynamicText = (
   node: t.Node,
@@ -45,28 +44,23 @@ export const toDynamicText = (
   filePath: string,
   lines: string[],
   moduleName: string | undefined,
-): SourceTextWithContext => {
+): SourceText => {
   const loc = node.loc
   const line = loc ? loc.start.line : undefined
   const column = loc ? loc.start.column : undefined
-  return {
+  return appendKey({
+    key: '',
     type: 'interpolated',
     textParts: parts,
-    context: {
-      path: filePath,
-      line,
-      column,
-      module: moduleName,
-      text: loc ? lines[loc.start.line] : undefined,
-    },
-  }
+    path: filePath,
+    line,
+    column,
+    module: moduleName,
+  })
 }
 
-export const extractCode = (
-  code: string,
-  filePath: string,
-): SourceTextWithContext[] => {
-  let sourceTexts: SourceTextWithContext[] = []
+export const extractCode = (code: string, filePath: string): SourceText[] => {
+  let sourceTexts: SourceText[] = []
   const ast = parse(code)
 
   const moduleName = extractModuleName(ast)

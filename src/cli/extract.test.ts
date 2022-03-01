@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { sourceTextToKey } from '../util/locale'
 import { createResource, exporters, importers, toSourceText } from './extract'
 import { extractCode } from './extract/tsx-extractor'
+import { sourceTextToKey } from './source_to_key'
 
 describe('extract', () => {
   const filePath = resolve(
@@ -44,14 +44,12 @@ const s = a18n('中文')`,
     expect(extracted).toEqual([
       {
         type: 'string',
+        key: '中文',
         text: '中文',
-        context: {
-          path: '/mock/file.tsx',
-          line: 3,
-          column: 10,
-          text: undefined,
-          module: 'my/module',
-        },
+        path: '/mock/file.tsx',
+        line: 3,
+        column: 10,
+        module: 'my/module',
       },
     ])
   })

@@ -2,9 +2,9 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import * as prettier from 'prettier'
 import { LocaleResource } from '../types'
-import { sourceTextToKey } from '../util/locale'
 import { extractCode } from './extract/tsx-extractor'
 import { replaceCode as replace } from './replace/tsx-replacer'
+import { sourceTextToKey } from './source_to_key'
 
 const format = (str: string) => {
   return prettier.format(str, { parser: 'babel-ts' })

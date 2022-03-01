@@ -2,7 +2,7 @@ import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import CJK from 'cjk-regex'
 import { relative } from 'path'
-import { SourceTextWithContext } from '../../types'
+import { SourceText } from '../../types'
 import { assertNever } from '../../util/assert-never'
 import {
   LIB_FACTORY_IDENTIFIER,
@@ -105,7 +105,7 @@ export const wrapCode = (
   },
 ): {
   output: string
-  sourceTexts: SourceTextWithContext[]
+  sourceTexts: SourceText[]
 } => {
   if (code.includes(LIB_IGNORE_FILE)) {
     return {
@@ -154,7 +154,7 @@ export const wrapCode = (
 
   const lines = code.split('\n')
 
-  let sourceTexts = [] as SourceTextWithContext[]
+  let sourceTexts = [] as SourceText[]
   const addStaticText = (node: t.Node, text: string): void => {
     sourceTexts.push(
       toStaticText(node, text, filePath ?? '', lines, newModuleName),
