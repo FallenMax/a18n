@@ -211,17 +211,11 @@ const checkExtract = async (
     }
   }
 
-  return missingKeysExist
-    ? {
-        ok: false,
-        checkType: 'extract',
-        errors: byLocale,
-      }
-    : {
-        ok: true,
-        checkType: 'extract',
-        errors: byLocale,
-      }
+  return {
+    ok: !missingKeysExist,
+    checkType: 'extract',
+    errors: byLocale,
+  }
 }
 
 const checkResource = async (
@@ -274,17 +268,11 @@ const checkResource = async (
     }
   }
 
-  return missingValue
-    ? {
-        ok: true,
-        checkType: 'resource',
-        errors: byLocale,
-      }
-    : {
-        ok: false,
-        checkType: 'resource',
-        errors: byLocale,
-      }
+  return {
+    ok: !missingValue,
+    checkType: 'resource',
+    errors: byLocale,
+  }
 }
 
 export const check = async (files: string[], params: CheckOptions) => {
