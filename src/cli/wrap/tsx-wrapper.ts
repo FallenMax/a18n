@@ -81,7 +81,7 @@ const fromStringLiteral = (
     return undefined
   }
 }
-export type ModuleNameTemplate = 'filePath' | 'fileName'
+export type ModuleNameTemplate = 'filePath' | 'fileName' | 'fileDirAndName'
 
 export interface WrapOptions {
   basePath?: string
@@ -127,13 +127,22 @@ export const wrapCode = (
       case 'fileName': {
         return name
       }
-      case 'filePath':
+      case 'fileDirAndName': {
+        const relativeDir = relative(basePath, dir)
+        const lastDir = relativeDir.split(/\/|\\/).pop()
+        if (lastDir) {
+          return `${lastDir}/${name}`
+        } else {
+          return name
+        }
+      }
+      case 'filePath': {
         const relativeDir = relative(basePath, dir)
         return (relativeDir + '/' + name)
           .split(/\/|\\/)
           .filter(Boolean)
           .join('/')
-        break
+      }
       default:
         return assertNever(moduleName)
     }

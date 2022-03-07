@@ -66,8 +66,9 @@ OPTIONS:
       "const a18n = getA18n('my-ns', 'a/b/c/foo')"
     and this a18n instance will use 'resource['a/b/c/foo']' instead of 'resource' when translating in the runtime. 
     available template values are:
-      'filePath': file extension is ignored, "a/b/c/foo.ts" will be "a/b/c/foo"
-      'fileName': file extension is ignored, "a/b/c/foo.ts" will be "foo"
+      'fileDirAndName': "a/b/c/foo.ts" will be "c/foo"
+      'filePath': "a/b/c/foo.ts" will be "a/b/c/foo"
+      'fileName': "a/b/c/foo.ts" will be "foo"
   '--module-name-update':
     when using '--module-name', update existed module name to new name, default is true.
   '--exclude=':

@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "prebuild": "rm -rf dist",
-    "test": "jest --ci --coverage",
+    "test": "jest",
     "coverage": "codecov",
     "test:watch": "jest --watch",
     "build": "yarn run build:node && yarn run build:browser",
