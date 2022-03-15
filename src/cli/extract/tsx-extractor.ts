@@ -114,7 +114,7 @@ export const extractCode = (code: string, filePath: string): SourceText[] => {
           if (t.isIdentifier(tag) && tag.name === LIB_IDENTIFIER) {
             addDynamicText(
               node,
-              quasis.map((q) => q.value.raw),
+              quasis.map((q) => q.value.cooked ?? q.value.raw),
             )
             break
           }
@@ -126,7 +126,7 @@ export const extractCode = (code: string, filePath: string): SourceText[] => {
           ) {
             addDynamicText(
               node,
-              quasis.map((q) => q.value.raw),
+              quasis.map((q) => q.value.cooked ?? q.value.raw),
             )
             break
           }

@@ -84,3 +84,8 @@ const temp2 = (s3 as any)?.y?.z
 
 // Logical OR assignment
 a ||= b
+
+// handle \n correctly
+const staticTextWithLf = a18n('你好\n世界-1')
+const dynamicTextWithLf = a18n`你好
+${a18n('世界-1')}-1`

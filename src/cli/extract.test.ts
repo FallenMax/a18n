@@ -27,6 +27,10 @@ describe('extract', () => {
       '这样子',
       '我喜欢2',
       '这样子2',
+
+      '你好\n世界',
+      '你好\n%s',
+      '世界',
     ]
 
     const keys = extracted.map(sourceTextToKey)
@@ -273,6 +277,10 @@ const s = a18n('中文')`,
       '这样子',
       '我喜欢2',
       '这样子2',
+
+      '你好\n世界',
+      '你好\n%s',
+      '世界',
     ]
 
     const exported = exporters.json(

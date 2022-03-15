@@ -241,7 +241,9 @@ export const wrapCode = (
           // `中文${someVar}` => a18n`中文${someVar}`
           case 'TemplateLiteral': {
             const { quasis } = node
-            if (quasis.some((q) => needTranslate(q.value.raw))) {
+            if (
+              quasis.some((q) => needTranslate(q.value.cooked ?? q.value.raw))
+            ) {
               const parent = path.parent
               if (parent.type === 'TaggedTemplateExpression') {
                 // ignore when it's already wrapped: a18n`中文${someVar}`
@@ -267,7 +269,7 @@ export const wrapCode = (
                 if (checkOnly) {
                   addDynamicText(
                     node,
-                    quasis.map((q) => q.value.raw),
+                    quasis.map((q) => q.value.cooked ?? q.value.raw),
                   )
                 } else {
                   path.replaceWith(

@@ -46,3 +46,7 @@ const temp2 = (s3 as any)?.y?.z
 // a18n(variable) should only produce warning instead of error
 const someVar = 'abc'
 const temp3 = a18n(someVar)
+
+// handle \n correctly
+const staticTextWithLf = a18n('你好\n世界')
+const dynamicTextWithLf = a18n`你好\n${a18n('世界')}`
