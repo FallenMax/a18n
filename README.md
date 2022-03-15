@@ -23,7 +23,7 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
   - Support dynamic texts in ES6 Template String
   - Support TypeScript
   - Support React, or any framework that uses JSX
-  - Can (automatically) label texts by module it belongs to, so context is not lost
+  - Provides context for texts with `module` they belongs to
   - Ignore lines or files with annotation comments
   - Preserves original code formatting while modifying code as much as possible (though [prettier](https://github.com/prettier/prettier) is still recommended)
 - API (for text translation):
@@ -44,8 +44,11 @@ npm install --save a18n
 
 Scan and modify code files (.js, .ts, .jsx, .tsx) in `src` directory, this will wrap CJK text strings with translation calls:
 
+- `--namespace` serves the purpose to avoid conflict with same a18n instance from other dependencies
+- `--module-name` automatically provides context for each text, and helps distinguish texts from different modules
+
 ```sh
-npx a18n wrap src --write
+npx a18n wrap src --write --namespace="my.unique.project.id" --module-name="fileDirAndName"
 ```
 
 Manually check for unintended modifications and fix them, you can:
