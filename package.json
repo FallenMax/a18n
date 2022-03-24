@@ -6,6 +6,7 @@
   "author": "FallenMax <FallenMax@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "start": "yarn run watch & yarn run test:watch",
     "prebuild": "rm -rf dist",
     "test": "jest",
     "coverage": "codecov",

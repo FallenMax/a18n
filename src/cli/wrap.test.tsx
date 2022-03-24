@@ -45,6 +45,17 @@ describe('wrap', () => {
     expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
+  test('add a18n() calls: wrap as a18n.x inside jsx', () => {
+    const source = `const a = <div>你好，<strong>{userName}</strong></div>`
+    const expected = `const x1 = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}\`}</div>`
+
+    expect(format(wrapCode(source, { namespace: undefined }))).toBe(
+      format(expected),
+    )
+    // ensure we don't double wrap a18n()
+    expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+  })
+
   test('returns unwrapped "sourceTexts" when checkOnly=true', () => {
     const source = readFileSync(
       resolve(__dirname, '../../src/cli/__test__/wrap-input.mock.tsx'),
