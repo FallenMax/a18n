@@ -47,7 +47,7 @@ describe('wrap', () => {
 
   test('add a18n() calls: wrap as a18n.x inside jsx', () => {
     const source = `const a = <div>你好，<strong>{userName}</strong></div>`
-    const expected = `const x1 = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}\`}</div>`
+    const expected = `import a18n from "a18n"; const a = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}\`}</div>`
 
     expect(format(wrapCode(source, { namespace: undefined }))).toBe(
       format(expected),
@@ -72,10 +72,10 @@ describe('wrap', () => {
       '中文%s',
       '星期%s',
       '周%s',
-      '我喜欢',
+      '我喜欢%1%2',
       '这样子',
       '生活',
-      '我喜欢',
+      '我喜欢%s',
       '这样子',
       '中文3',
       '你好\n世界',

@@ -329,7 +329,7 @@ export const wrapCode = (
                       if (lastIsText) {
                         const last = quasis[quasis.length - 1]
                         last.value.cooked =
-                          (last.value.cooked ?? '') + child.value
+                          (last.value.cooked ?? '') + child.value.trim()
                         last.value.raw = (last.value.cooked ?? '').replace(
                           /\\|`|\${/g,
                           '\\$&',
@@ -340,8 +340,8 @@ export const wrapCode = (
                             raw:
                               // Add a backslash before every ‘`’, ‘\’ and ‘${’.
                               // https://github.com/babel/babel/issues/9242#issuecomment-532529613
-                              child.value.replace(/\\|`|\${/g, '\\$&'),
-                            cooked: child.value,
+                              child.value.trim().replace(/\\|`|\${/g, '\\$&'),
+                            cooked: child.value.trim(),
                           }),
                         )
                       }
@@ -373,20 +373,40 @@ export const wrapCode = (
                 )
                 ensureLastText()
 
-                if (t.isJSXElement(parent)) {
-                  parentPath.replaceWith(
-                    t.jsxElement(parent.openingElement, parent.closingElement, [
-                      t.jsxExpressionContainer(
-                        t.taggedTemplateExpression(
-                          t.memberExpression(
-                            t.identifier(LIB_IDENTIFIER),
-                            t.identifier(LIB_METHOD_X_IDENTIFIER),
-                          ),
-                          t.templateLiteral(quasis, expressions),
-                        ),
+                const children = [
+                  t.jsxExpressionContainer(
+                    t.taggedTemplateExpression(
+                      t.memberExpression(
+                        t.identifier(LIB_IDENTIFIER),
+                        t.identifier(LIB_METHOD_X_IDENTIFIER),
                       ),
-                    ]),
+                      t.templateLiteral(quasis, expressions),
+                    ),
+                  ),
+                ]
+                if (checkOnly) {
+                  addDynamicText(
+                    node,
+                    quasis.map((q) => q.value.cooked ?? q.value.raw),
                   )
+                } else {
+                  if (t.isJSXElement(parent)) {
+                    parentPath.replaceWith(
+                      t.jsxElement(
+                        parent.openingElement,
+                        parent.closingElement,
+                        children,
+                      ),
+                    )
+                  } else if (t.isJSXFragment(parent)) {
+                    parentPath.replaceWith(
+                      t.jsxFragment(
+                        parent.openingFragment,
+                        parent.closingFragment,
+                        children,
+                      ),
+                    )
+                  }
                 }
               } else {
                 const emptyStart = node.value.match(/^\s*/)![0]
