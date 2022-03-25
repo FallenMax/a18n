@@ -43,7 +43,9 @@ a18n.setLocaleSync('zh-CN')`
   <>
     {a18n('我喜欢2')}
     <input type="text" placeholder={a18n('这样子2')} />
-    <span>{a18n.x\`你有\${(<strong>{a18n('很多')}</strong>)}封未读邮件\`}</span>
+    <span>{a18n.x\`你有\${(
+      <strong>{a18n('很多')}</strong>
+      )}封未读邮件\`}</span>
   </>
 )`
     const expected = format(`
@@ -51,9 +53,28 @@ a18n.setLocaleSync('zh-CN')`
       <>
         我喜欢2
         <input type=\"text\" placeholder='这样子2' />
-        <span>{['你有', <strong>很多</strong>, '封未读邮件']}</span>
+        <span>你有<strong>很多</strong>封未读邮件</span>
       </>
     )`)
+    expect(format(purgeCode(source))).toBe(expected)
+    // ensure nothing changes for second purge
+    expect(format(purgeCode(expected))).toBe(expected)
+  })
+
+  test('remove a18n.x method 2', () => {
+    const source = `
+    const s15_1 = (
+      <>{a18n.x\`我喜欢\${(<input type="text" placeholder={a18n('这样子')} />)}\`}</>
+    )
+`
+    const expected = format(`
+    const s15_1 = (
+      <>
+        我喜欢
+        <input type="text" placeholder="这样子" />
+      </>
+    )
+ `)
     expect(format(purgeCode(source))).toBe(expected)
     // ensure nothing changes for second purge
     expect(format(purgeCode(expected))).toBe(expected)

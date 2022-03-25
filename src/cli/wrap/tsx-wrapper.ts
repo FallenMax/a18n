@@ -166,11 +166,13 @@ export const wrapCode = (
 
   let sourceTexts = [] as SourceText[]
   const addStaticText = (node: t.Node, text: string): void => {
+    console.log('add static', text)
     sourceTexts.push(
       toStaticText(node, text, filePath ?? '', lines, newModuleName),
     )
   }
   const addDynamicText = (node: t.Node, parts: string[]) => {
+    console.log('add dyn', parts)
     sourceTexts.push(
       toDynamicText(node, parts, filePath ?? '', lines, newModuleName),
     )
@@ -264,9 +266,8 @@ export const wrapCode = (
                   markLibUsed()
                   break
                 }
-              }
-
-              if (parent.type !== 'TaggedTemplateExpression') {
+              } else {
+                console.log('add 3 ', node.type, node.value)
                 if (checkOnly) {
                   addDynamicText(
                     node,
@@ -305,7 +306,10 @@ export const wrapCode = (
                 break
               }
 
-              const shouldWrapMultiple = parent.children.length > 1
+              const shouldWrapMultiple =
+                parent.children.filter(
+                  (child) => t.isJSXText(child) && child.value.trim(),
+                ).length > 1
 
               if (shouldWrapMultiple) {
                 const expressions: Array<t.Expression> = []
@@ -324,7 +328,7 @@ export const wrapCode = (
                   lastIsText = true
                 }
                 ;(parent as t.JSXElement | t.JSXFragment).children.forEach(
-                  (child, i, arr) => {
+                  (child) => {
                     if (t.isJSXText(child)) {
                       if (lastIsText) {
                         const last = quasis[quasis.length - 1]
@@ -384,13 +388,15 @@ export const wrapCode = (
                     ),
                   ),
                 ]
-                if (checkOnly) {
-                  addDynamicText(
-                    node,
-                    quasis.map((q) => q.value.cooked ?? q.value.raw),
-                  )
-                } else {
-                  if (t.isJSXElement(parent)) {
+
+                if (t.isJSXElement(parent)) {
+                  console.log('add 1', node.type, node.value)
+                  if (checkOnly) {
+                    addDynamicText(
+                      node,
+                      quasis.map((q) => q.value.cooked ?? q.value.raw),
+                    )
+                  } else {
                     parentPath.replaceWith(
                       t.jsxElement(
                         parent.openingElement,
@@ -398,7 +404,15 @@ export const wrapCode = (
                         children,
                       ),
                     )
-                  } else if (t.isJSXFragment(parent)) {
+                  }
+                } else if (t.isJSXFragment(parent)) {
+                  console.log('add 2', node.type, node.value)
+                  if (checkOnly) {
+                    addDynamicText(
+                      node,
+                      quasis.map((q) => q.value.cooked ?? q.value.raw),
+                    )
+                  } else {
                     parentPath.replaceWith(
                       t.jsxFragment(
                         parent.openingFragment,
@@ -427,6 +441,53 @@ export const wrapCode = (
             }
             break
           }
+
+          // <div>你好</div>
+          // =>
+          // <div>{a18n("你好")}</div>
+          //
+          // <div>你好，<strong>{userName}</strong>!</div>
+          // =>
+          // <div>{a18n.x`你好，${(<strong>{userName}</strong>!)}`}</div>
+          // case 'JSXElement':
+          // case 'JSXFragment': {
+          //   const nonEmptyTexts = node.children.filter((child) => {
+          //     return t.isJSXText(child) && child.value.trim()
+          //   }) as t.JSXText[]
+
+          //   const translatableTexts = nonEmptyTexts.filter((child) => {
+          //     return needTranslate(child.value)
+          //   })
+          //   if (translatableTexts.length > 0) {
+          //     if (nonEmptyTexts.length === 1) {
+          //       // <div>你好</div>
+          //       // =>
+          //       // <div>{a18n("你好")}</div>
+          //       const [jsxText] = translatableTexts
+          //       path.
+
+          //       const emptyStart = jsxText.value.match(/^\s*/)![0]
+          //       const emptyEnd = jsxText.value.match(/\s*$/)![0]
+          //       const nonEmptyText = jsxText.value.trim()
+          //       path.get
+          //       if (checkOnly) {
+          //         addStaticText(jsxText, nonEmptyText)
+          //       } else {
+          //         path.replaceWithMultiple([
+          //           t.jsxText(emptyStart),
+          //           t.jsxExpressionContainer(t.stringLiteral(nonEmptyText)),
+          //           t.jsxText(emptyEnd),
+          //         ])
+
+          //     } else {
+          //       // <div>你好，<strong>{userName}</strong>!</div>
+          //       // =>
+          //       // <div>{a18n.x`你好，${(<strong>{userName}</strong>!)}`}</div>
+          //     }
+          //   }
+
+          //   break
+          // }
 
           case 'ImportDeclaration': {
             importStatementCount++

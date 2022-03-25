@@ -31,13 +31,16 @@ const s14 = a18n`星期`
 
 // jsx text, attributes
 const s15 = (
-  <div>{a18n.x`我喜欢${(<input type="text" placeholder={a18n('这样子')} />)}${(
-    <div>{a18n('生活')}</div>
-  )}`}</div>
+  <div>{a18n.x`我喜欢${(
+    <input type="text" placeholder={a18n('这样子')} />
+  )}生活`}</div>
 )
 
 const s15_1 = (
-  <>{a18n.x`我喜欢${(<input type="text" placeholder={a18n('这样子')} />)}`}</>
+  <>
+    {a18n('我喜欢2')}
+    <input type="text" placeholder={a18n('这样子2')} />
+  </>
 )
 
 // 保留ts类型标注

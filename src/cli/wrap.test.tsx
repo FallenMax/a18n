@@ -45,15 +45,33 @@ describe('wrap', () => {
     expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
-  test('add a18n() calls: wrap as a18n.x inside jsx', () => {
-    const source = `const a = <div>你好，<strong>{userName}</strong></div>`
-    const expected = `import a18n from "a18n"; const a = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}\`}</div>`
+  describe('add a18n.x() calls for jsx', () => {
+    test('wrap multiple text elements using a18n.x', () => {
+      const source = `const a = <div>你好，<strong>{userName}</strong>!</div>`
+      const expected = `import a18n from "a18n"; const a = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}!\`}</div>`
 
-    expect(format(wrapCode(source, { namespace: undefined }))).toBe(
-      format(expected),
-    )
-    // ensure we don't double wrap a18n()
-    expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+      expect(format(wrapCode(source, { namespace: undefined }))).toBe(
+        format(expected),
+      )
+      // ensure we don't double wrap a18n()
+      expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+    })
+    test(`don't wrap single text element using a18n.x`, () => {
+      const source = `const a = <div>
+          你好，
+          <strong>{userName}</strong>
+      </div>` // note the missing '!'
+      const expected = `import a18n from "a18n"; const a = <div>
+        {a18n("你好，")}
+        <strong>{userName}</strong>
+      </div>`
+
+      expect(format(wrapCode(source, { namespace: undefined }))).toBe(
+        format(expected),
+      )
+      // ensure we don't double wrap a18n()
+      expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+    })
   })
 
   test('returns unwrapped "sourceTexts" when checkOnly=true', () => {
@@ -72,11 +90,10 @@ describe('wrap', () => {
       '中文%s',
       '星期%s',
       '周%s',
-      '我喜欢%1%2',
+      '我喜欢%s生活',
       '这样子',
-      '生活',
-      '我喜欢%s',
-      '这样子',
+      '我喜欢2',
+      '这样子2',
       '中文3',
       '你好\n世界',
       '你好\n%s',
