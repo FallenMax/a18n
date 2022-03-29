@@ -69,9 +69,13 @@ export const purgeCode = (code: string): string => {
             break
 
           //  a18n`中文${someVar}` => `中文${someVar}`
-          //  a18n.x`中文${someVar}` => ['中文',someVar, '']
+          //  a18n.x`中文${someVar}` =>
+          //    inside JSX:  中文{someVar}
+          //    else:  ['中文',someVar, '']
           case 'TemplateLiteral': {
             const parent = path.parent
+            const parentPath = path.parentPath
+            const gParentPath = path.parentPath.parentPath
 
             if (parent.type === 'TaggedTemplateExpression') {
               // a18n`中文${someVar}`  => `中文${someVar}`
@@ -79,10 +83,12 @@ export const purgeCode = (code: string): string => {
                 t.isIdentifier(parent.tag) &&
                 parent.tag.name === LIB_IDENTIFIER
               ) {
-                path.parentPath.replaceWith(node)
+                parentPath.replaceWith(node)
                 break
               }
-              // a18n.x`中文${someVar}` => ['中文',someVar, '']
+              //  a18n.x`中文${someVar}` =>
+              //    inside JSX:  中文{someVar}
+              //    other:  ['中文',someVar, '']
               if (
                 t.isMemberExpression(parent.tag) &&
                 t.isIdentifier(parent.tag.object) &&
@@ -90,20 +96,58 @@ export const purgeCode = (code: string): string => {
                 t.isIdentifier(parent.tag.property) &&
                 parent.tag.property.name === LIB_METHOD_X_IDENTIFIER
               ) {
-                const { quasis = [], expressions = [] } = node
-                const elements: t.Expression[] = []
-                quasis.forEach((quasi, i) => {
-                  elements.push(
-                    t.stringLiteral(
-                      quasi.value.cooked ?? quasi.value.raw ?? '',
-                    ),
-                  )
-                  if (expressions[i]) {
-                    elements.push(expressions[i])
-                  }
-                })
+                if (t.isJSXExpressionContainer(gParentPath.node)) {
+                  const { quasis = [], expressions = [] } = node
+                  const elements: (
+                    | t.JSXElement
+                    | t.JSXFragment
+                    | t.JSXText
+                    | t.JSXExpressionContainer
+                    | t.JSXSpreadChild
+                  )[] = []
+                  quasis.forEach((quasi, i) => {
+                    const text = quasi.value.cooked ?? quasi.value.raw ?? ''
+                    if (text) {
+                      elements.push(t.jsxText(text))
+                    }
+                    const exp = expressions[i]
+                    if (exp) {
+                      if (
+                        t.isJSXElement(exp) ||
+                        t.isJSXFragment(exp) ||
+                        t.isJSXText(exp) ||
+                        t.isJSXExpressionContainer(exp) ||
+                        t.isJSXSpreadChild(exp)
+                      ) {
+                        elements.push(exp)
+                      } else {
+                        elements.push(t.jsxExpressionContainer(exp))
+                      }
+                    }
+                  })
 
-                path.parentPath.replaceWith(t.arrayExpression(elements))
+                  // Babel's "replaceWithMultiple" adds unnecessary parentheses
+                  // https://stackoverflow.com/questions/55648184/babels-replacewithmultiple-adds-unnecessary-parentheses
+
+                  gParentPath.replaceInline(elements)
+                  // gParentPath.replaceWithMultiple(elements)
+                } else {
+                  const { quasis = [], expressions = [] } = node
+                  const elements: t.Expression[] = []
+                  quasis.forEach((quasi, i) => {
+                    elements.push(
+                      t.stringLiteral(
+                        quasi.value.cooked ?? quasi.value.raw ?? '',
+                      ),
+                    )
+                    if (expressions[i]) {
+                      elements.push(expressions[i])
+                    }
+                  })
+
+                  parentPath.replaceWith(t.arrayExpression(elements))
+                }
+
                 break
               }
             }

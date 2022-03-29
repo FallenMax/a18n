@@ -1,4 +1,4 @@
-import traverse from '@babel/traverse'
+import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import CJK from 'cjk-regex'
 import { relative } from 'path'
@@ -9,6 +9,7 @@ import {
   LIB_IDENTIFIER,
   LIB_IGNORE_FILE,
   LIB_IGNORE_LINE,
+  LIB_METHOD_X_IDENTIFIER,
   LIB_MODULE,
 } from '../constants'
 import { toDynamicText, toStaticText } from '../extract/tsx-extractor'
@@ -263,9 +264,7 @@ export const wrapCode = (
                   markLibUsed()
                   break
                 }
-              }
-
-              if (parent.type !== 'TaggedTemplateExpression') {
+              } else {
                 if (checkOnly) {
                   addDynamicText(
                     node,
@@ -285,21 +284,163 @@ export const wrapCode = (
             break
           }
 
-          // <div>  中文  </div> => <div>  {a18n('中文')}  </div>
+          // single jsxtext:
+          // <div>你好<strong>{userName}</strong></div>
+          // =>
+          // <div>{a18n("你好")}<strong>{userName}</strong></div>
+          //
+          // multiple jsxtext:
+          // <div>你好，<strong>{userName}</strong>!!!</div>
+          // =>
+          // <div>{a18n.x`你好，${(<strong>{userName}</strong>)}!!!`}</div>
           case 'JSXText': {
             if (needTranslate(node.value)) {
-              const emptyStart = node.value.match(/^\s*/)![0]
-              const emptyEnd = node.value.match(/\s*$/)![0]
-              const nonEmptyText = node.value.trim()
-              if (checkOnly) {
-                addStaticText(node, nonEmptyText)
-              } else {
-                path.replaceWithMultiple([
-                  t.jsxText(emptyStart),
-                  t.jsxExpressionContainer(t.stringLiteral(nonEmptyText)),
-                  t.jsxText(emptyEnd),
-                ])
+              const parent = path.parent as t.JSXElement | t.JSXFragment
+              const parentPath = path.parentPath as NodePath<
+                t.JSXElement | t.JSXFragment
+              >
+              const isJSXParent =
+                t.isJSXElement(parent) || t.isJSXFragment(parent)
+              if (!isJSXParent) {
+                break
               }
+
+              const hasText = (child: t.Node): boolean =>
+                t.isJSXText(child) && child.value.trim() !== ''
+
+              const shouldWrapMultiple =
+                parent.children.filter(hasText).length > 1
+
+              if (shouldWrapMultiple) {
+                // avoid parent node wrapped multiple times from its jsxtext children,
+                // only let the first qualified text node trigger wrapping
+                const theOne = parent.children.find(hasText)
+                if (theOne && theOne.start !== node.start) {
+                  break
+                }
+                const expressions: Array<t.Expression> = []
+                const quasis: Array<t.TemplateElement> = []
+
+                let lastIsText = false
+                const ensureLastText = () => {
+                  if (!lastIsText) {
+                    quasis.push(
+                      t.templateElement({
+                        raw: '',
+                        cooked: '',
+                      }),
+                    )
+                  }
+                  lastIsText = true
+                }
+                ;(parent as t.JSXElement | t.JSXFragment).children.forEach(
+                  (child) => {
+                    if (t.isJSXText(child)) {
+                      if (lastIsText) {
+                        const last = quasis[quasis.length - 1]
+                        last.value.cooked =
+                          (last.value.cooked ?? '') + child.value.trim()
+                        last.value.raw = (last.value.cooked ?? '').replace(
+                          /\\|`|\${/g,
+                          '\\$&',
+                        )
+                      } else {
+                        quasis.push(
+                          t.templateElement({
+                            raw:
+                              // Add a backslash before every ‘`’, ‘\’ and ‘${’.
+                              // https://github.com/babel/babel/issues/9242#issuecomment-532529613
+                              child.value.trim().replace(/\\|`|\${/g, '\\$&'),
+                            cooked: child.value.trim(),
+                          }),
+                        )
+                      }
+                      lastIsText = true
+                    } else {
+                      if (t.isJSXExpressionContainer(child)) {
+                        if (t.isJSXEmptyExpression(child.expression)) {
+                          console.warn('[wrap] unexpected JSXEmptyExpression', {
+                            child,
+                            parent,
+                          })
+                        } else {
+                          ensureLastText()
+                          expressions.push(child.expression)
+                          lastIsText = false
+                        }
+                      } else if (t.isJSXSpreadChild(child)) {
+                        console.warn('[wrap] unexpected JSXSpreadChild', {
+                          child,
+                          parent,
+                        })
+                      } else {
+                        ensureLastText()
+                        expressions.push(child)
+                        lastIsText = false
+                      }
+                    }
+                  },
+                )
+                ensureLastText()
+
+                const children = [
+                  t.jsxExpressionContainer(
+                    t.taggedTemplateExpression(
+                      t.memberExpression(
+                        t.identifier(LIB_IDENTIFIER),
+                        t.identifier(LIB_METHOD_X_IDENTIFIER),
+                      ),
+                      t.templateLiteral(quasis, expressions),
+                    ),
+                  ),
+                ]
+
+                if (t.isJSXElement(parent)) {
+                  if (checkOnly) {
+                    addDynamicText(
+                      node,
+                      quasis.map((q) => q.value.cooked ?? q.value.raw),
+                    )
+                  } else {
+                    parentPath.replaceWith(
+                      t.jsxElement(
+                        parent.openingElement,
+                        parent.closingElement,
+                        children,
+                      ),
+                    )
+                  }
+                } else if (t.isJSXFragment(parent)) {
+                  if (checkOnly) {
+                    addDynamicText(
+                      node,
+                      quasis.map((q) => q.value.cooked ?? q.value.raw),
+                    )
+                  } else {
+                    parentPath.replaceWith(
+                      t.jsxFragment(
+                        parent.openingFragment,
+                        parent.closingFragment,
+                        children,
+                      ),
+                    )
+                  }
+                }
+              } else {
+                const emptyStart = node.value.match(/^\s*/)![0]
+                const emptyEnd = node.value.match(/\s*$/)![0]
+                const nonEmptyText = node.value.trim()
+                if (checkOnly) {
+                  addStaticText(node, nonEmptyText)
+                } else {
+                  path.replaceWithMultiple([
+                    t.jsxText(emptyStart),
+                    t.jsxExpressionContainer(t.stringLiteral(nonEmptyText)),
+                    t.jsxText(emptyEnd),
+                  ])
+                }
+              }
+
               markLibUsed()
             }
             break

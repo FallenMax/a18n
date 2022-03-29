@@ -45,6 +45,35 @@ describe('wrap', () => {
     expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
   })
 
+  describe('add a18n.x() calls for jsx', () => {
+    test('wrap multiple text elements using a18n.x', () => {
+      const source = `const a = <div>你好，<strong>{userName}</strong>!</div>`
+      const expected = `import a18n from "a18n"; const a = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}!\`}</div>`
+
+      expect(format(wrapCode(source, { namespace: undefined }))).toBe(
+        format(expected),
+      )
+      // ensure we don't double wrap a18n()
+      expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+    })
+    test(`don't wrap single text element using a18n.x`, () => {
+      const source = `const a = <div>
+          你好，
+          <strong>{userName}</strong>
+      </div>` // note the missing '!'
+      const expected = `import a18n from "a18n"; const a = <div>
+        {a18n("你好，")}
+        <strong>{userName}</strong>
+      </div>`
+
+      expect(format(wrapCode(source, { namespace: undefined }))).toBe(
+        format(expected),
+      )
+      // ensure we don't double wrap a18n()
+      expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+    })
+  })
+
   test('returns unwrapped "sourceTexts" when checkOnly=true', () => {
     const source = readFileSync(
       resolve(__dirname, '../../src/cli/__test__/wrap-input.mock.tsx'),
@@ -61,16 +90,28 @@ describe('wrap', () => {
       '中文%s',
       '星期%s',
       '周%s',
-      '我喜欢',
+      '我喜欢%s生活',
       '这样子',
-      '生活',
-      '我喜欢',
-      '这样子',
+      '我喜欢2',
+      '这样子2',
       '中文3',
       '你好\n世界',
       '你好\n%s',
       '世界',
     ])
+  })
+
+  test('returns unwrapped "sourceTexts" when checkOnly=true: a18n.x', () => {
+    const source = `const s15 = (
+      <div>
+        我喜欢
+        <input type="text" placeholder="这样子" />
+        生活
+      </div>
+    )`
+    const { sourceTexts } = wrap(source, { checkOnly: true })
+    const keys = sourceTexts.map(sourceTextToKey)
+    expect(keys).toEqual(['我喜欢%s生活', '这样子'])
   })
 
   test('igore file containing `@a18n-ignore-file` ', () => {

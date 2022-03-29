@@ -31,17 +31,15 @@ const s14 = a18n`星期-1`
 
 // jsx text, attributes
 const s15 = (
-  <div>
-    {a18n('我喜欢-1')}
+  <div>{a18n.x`我喜欢${(
     <input type="text" placeholder={a18n('这样子-1')} />
-    <div>{a18n('生活-1')}</div>
-  </div>
+  )}生活-1`}</div>
 )
 
 const s15_1 = (
   <>
-    {a18n('我喜欢-1')}
-    <input type="text" placeholder={a18n('这样子-1')} />
+    {a18n('我喜欢2-1')}
+    <input type="text" placeholder={a18n('这样子2-1')} />
   </>
 )
 

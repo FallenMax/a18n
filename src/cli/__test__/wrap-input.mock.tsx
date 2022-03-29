@@ -29,14 +29,14 @@ const s15 = (
   <div>
     我喜欢
     <input type="text" placeholder="这样子" />
-    <div>生活</div>
+    生活
   </div>
 )
 
 const s15_1 = (
   <>
-    我喜欢
-    <input type="text" placeholder="这样子" />
+    我喜欢2
+    <input type="text" placeholder="这样子2" />
   </>
 )
 
