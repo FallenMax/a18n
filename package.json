@@ -86,7 +86,7 @@
     "@babel/parser": "^7.11.5",
     "@babel/traverse": "^7.11.5",
     "@babel/types": "^7.11.5",
-    "chalk": "^4.1.0",
+    "chalk": "^4",
     "cjk-regex": "^2.0.1",
     "fast-glob": "^3.2.4",
     "jest-worker": "^26.3.0",
