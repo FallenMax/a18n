@@ -53,8 +53,9 @@ export const purgeCode = (code: string): string => {
                   const grandGrandParentPath = grandParentPath.parentPath
                   // <>{"中文"}<>
                   if (
-                    t.isJSXElement(grandGrandParentPath.node) ||
-                    t.isJSXFragment(grandGrandParentPath.node)
+                    grandGrandParentPath &&
+                    (t.isJSXElement(grandGrandParentPath.node) ||
+                      t.isJSXFragment(grandGrandParentPath.node))
                   ) {
                     grandParentPath.replaceWith(t.jsxText(value))
                   } else {
@@ -74,8 +75,8 @@ export const purgeCode = (code: string): string => {
           //    else:  ['中文',someVar, '']
           case 'TemplateLiteral': {
             const parent = path.parent
-            const parentPath = path.parentPath
-            const gParentPath = path.parentPath.parentPath
+            const parentPath = path.parentPath!
+            const gParentPath = path.parentPath!.parentPath!
 
             if (parent.type === 'TaggedTemplateExpression') {
               // a18n`中文${someVar}`  => `中文${someVar}`
@@ -194,7 +195,7 @@ export const purgeCode = (code: string): string => {
             break
         }
       } catch (error) {
-        console.info('parents:', [path.parent.type, path.parentPath.type])
+        console.info('parents:', [path.parent.type, path.parentPath?.type])
         console.info('loc:', path.node.loc && path.node.loc.start)
         throw error
       }
