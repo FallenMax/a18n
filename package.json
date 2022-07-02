@@ -10,12 +10,12 @@
     "test": "jest",
     "coverage": "codecov",
     "test:watch": "jest --watch",
-    "build": "yarn run build:node && yarn run build:browser",
+    "build": "npm run build:node && npm run build:browser",
     "build:node": "tsc --project tsconfig.json",
     "build:browser": "rollup --config rollup.config.js",
     "build:watch": "tsc --project tsconfig.json --incremental --tsBuildInfoFile ./tmp/.tsbuildinfo --watch",
     "watch": "tsc --project tsconfig.json --watch",
-    "prepublishOnly": "yarn && yarn run build && yarn run test"
+    "prepublishOnly": "pnpm install && npm run build && npm run test"
   },
   "keywords": [
     "i18n",

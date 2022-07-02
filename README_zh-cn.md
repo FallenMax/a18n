@@ -37,7 +37,7 @@
 cd that-legacy-codebase
 
 # 1. 安装为项目依赖
-npm install --save a18n # or: yarn add a18n
+npm install --save a18n
 
 # 2. 用以下命令替换代码中的字符串为翻译方法调用(注意先备份代码):
 npx a18n wrap . --write
