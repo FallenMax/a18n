@@ -182,7 +182,7 @@ DESCRIPTION
 
 OPTIONS:
   '<path>':
-    file/dir/glob, code files to be processed. multiple entries are seperated by comma
+    file/dir/glob, code files to be processed. multiple entries are separated by comma
   '--write':
     write files in place. if not provided, a18n will perform a dry run and print files to be modified
   '--exclude=':
@@ -237,7 +237,7 @@ DESCRIPTION
 
 OPTIONS:
   '<path>':
-    file/dir/glob, code files to be processed. multiple entries are seperated by comma
+    file/dir/glob, code files to be processed. multiple entries are separated by comma
   '<localeRoot'>:
     directory to store locale resource files
   '--locales=<localeRoot>':

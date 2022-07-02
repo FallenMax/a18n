@@ -12,10 +12,8 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
 
 ## Features
 
-- CLI (for code modification):
+- Command Line Tool
   - **Wrap** texts with translation calls (`a18n wrap`)
-    > Note:
-    > "Wrap" is only applied to CJK texts, so texts in English are not supported for now.
   - **Extract** texts from translation calls (`a18n extract`)
   - **Check** for untranslated text in code and resources (`a18n check`)
   - **Replace** untranslated in code with translated ones (`a18n replace`)
@@ -26,7 +24,7 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
   - Provides context for texts with `module` they belongs to
   - Ignore lines or files with annotation comments
   - Preserves original code formatting while modifying code as much as possible (though [prettier](https://github.com/prettier/prettier) is still recommended)
-- API (for text translation):
+- Runtime
   - Translate static and dynamic texts using provided locale resource
   - Tiny (~ 200 loc)
   - Fast, dynamic texts are compiled into template at first run
@@ -35,10 +33,9 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
 
 > WARNING: existing project code will be modified, backup or commit before proceed
 
-Install as dependency (not devDependency, as `a18n` provides both CLI and runtime)
+Install as project dependency (not devDependency, as `a18n` provides both CLI and runtime)
 
 ```sh
-cd that_legacy_codebase
 npm install --save a18n
 ```
 
