@@ -187,8 +187,6 @@ const getA18n = (namespace: string, moduleName?: string): A18n => {
 
 const a18n = getA18n(DEFAULT_NAMESPACE)
 
-module.exports = a18n
-
 export default a18n
 export { LocaleResource } from '../types'
 export { getA18n }
