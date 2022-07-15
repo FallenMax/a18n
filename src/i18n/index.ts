@@ -8,7 +8,11 @@ const RESOURCE_VERSION = '3'
 // @ts-ignore
 const langs = typeof navigator !== 'undefined' ? navigator.languages || [] : []
 const DEFAULT_LOCALE = langs[0] || 'en-US'
-const DEFAULT_NAMESPACE = '__$a18n_namespace__'
+// do not share by default.
+// different code (instance) should only share resources if they specify a common namespace
+const DEFAULT_NAMESPACE = `__$a18n_namespace_${Date.now()}_${String(
+  Math.random(),
+).slice(2)}`
 const ROOT_KEY = `__$a18n-global_resource_${RESOURCE_VERSION}__`
 
 declare var window: any
