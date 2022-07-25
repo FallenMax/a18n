@@ -1,4 +1,5 @@
 import { A18n, LocaleResource } from '../types'
+import { repeatArray, repeatString } from '../util/repeat'
 import { compile, TemplateCache } from './translator'
 
 //-------------- Types --------------
@@ -16,6 +17,27 @@ const DEFAULT_NAMESPACE = `__$a18n_namespace_${Date.now()}_${String(
 const ROOT_KEY = `__$a18n-global_resource_${RESOURCE_VERSION}__`
 
 declare var window: any
+
+/** repeat translated string multiple times, so that ui issues like text overflow can be spotted easily */
+let debugRepeatCount: undefined | number
+let debugRepeatSeparator: undefined | string = ' '
+const debugSetRepeat = (
+  count: number | undefined,
+  separator: string | undefined = ' ',
+) => {
+  debugRepeatCount = count
+  debugRepeatSeparator = separator
+}
+const repeatStringIfNeeded = (str: string) => {
+  return debugRepeatCount
+    ? repeatString(str, debugRepeatCount, debugRepeatSeparator)
+    : str
+}
+const repeatArrayIfNeeded = (arr: any[]) => {
+  return debugRepeatCount
+    ? repeatArray(arr, debugRepeatCount, debugRepeatSeparator)
+    : arr
+}
 
 /** globalThis */
 const _global =
@@ -115,16 +137,15 @@ const getA18n = (namespace: string, moduleName?: string): A18n => {
     const cache = getCache()
     if (typeof text === 'string') {
       const translated = resource[text]
-      if (typeof translated === 'string') {
-        return translated
-      }
-      return text
+      return repeatStringIfNeeded(
+        typeof translated === 'string' ? translated : text,
+      )
     }
 
     if (text && typeof text.length === 'number') {
       if (text.length === 1) {
         // shortcut for a18n`statictext`, due to misusage
-        return a18n(text[0])
+        return repeatStringIfNeeded(a18n(text[0]))
       }
       const template = compile(text, resource, cache)
       const args = arguments
@@ -134,11 +155,12 @@ const getA18n = (namespace: string, moduleName?: string): A18n => {
         const item = template[index]
         result += typeof item === 'number' ? String(args[item]) : item
       }
-      return result
+      return repeatStringIfNeeded(result)
     }
 
     console.warn('[a18n] invalid input:', arguments)
-    return String(text)
+    const result = String(text)
+    return repeatStringIfNeeded(result)
   }
 
   //-------------- instance methods --------------
@@ -148,7 +170,7 @@ const getA18n = (namespace: string, moduleName?: string): A18n => {
     if (typeof text.length === 'number') {
       if (text.length === 1) {
         // shortcut for a18n.x`statictext`, due to misusage
-        return [a18n(text)]
+        return repeatArrayIfNeeded([a18n(text)])
       }
       const template = compile(text, resource, cache)
       const args = arguments
@@ -158,18 +180,22 @@ const getA18n = (namespace: string, moduleName?: string): A18n => {
         const item = template[index]
         result.push(typeof item === 'number' ? args[item] : item)
       }
-      return result
+      return repeatArrayIfNeeded(result)
     }
 
     console.warn('[a18n] invalid input:', arguments)
-    return [text]
+    const result = [text]
+    return repeatArrayIfNeeded(result)
   }
+
   a18n.addLocaleResource = addLocaleResource
   a18n.setLocale = setLocale
   a18n.getLocale = () => ns.currentLocale || DEFAULT_LOCALE
 
   //-------------- static methods --------------
   a18n.getA18n = getA18n
+
+  a18n.DEBUG_setRepeat = debugSetRepeat
 
   a18n.DEBUG_reset = () => {
     Object.keys(root).forEach((namespace) => {

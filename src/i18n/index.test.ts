@@ -328,4 +328,67 @@ describe('i18n', () => {
       expect(b('x')).toBe('x')
     })
   })
+
+  describe('DEBUG_setRepeat', () => {
+    test('can set repeat count', () => {
+      a18n.addLocaleResource('en', {
+        'not translated': null,
+        'static text': 'static text translated',
+        'dynamic %s': 'dynamic %s translated',
+        'dynamic %s not translated': '',
+      })
+      a18n.setLocale('en')
+      a18n.DEBUG_setRepeat(2)
+
+      expect(a18n('not translated')).toBe('not translated not translated')
+      expect(a18n('not exist')).toBe('not exist not exist')
+      expect(a18n('static text')).toBe(
+        'static text translated static text translated',
+      )
+      expect(a18n`dynamic ${1}`).toBe(
+        `dynamic 1 translated dynamic 1 translated`,
+      )
+      expect(a18n`dynamic ${2} untranslated`).toBe(
+        `dynamic 2 untranslated dynamic 2 untranslated`,
+      )
+      expect(a18n.x`dynamic ${1}`).toEqual([
+        `dynamic `,
+        1,
+        ' translated',
+        ' ',
+        `dynamic `,
+        1,
+        ' translated',
+      ])
+
+      expect(a18n.x`dynamic ${1} untranslated`).toEqual([
+        `dynamic `,
+        1,
+        ' untranslated',
+        ' ',
+        `dynamic `,
+        1,
+        ' untranslated',
+      ])
+
+      a18n.DEBUG_setRepeat(3, '*')
+
+      expect(a18n('not translated')).toBe(
+        'not translated*not translated*not translated',
+      )
+      expect(a18n.x`dynamic ${1}`).toEqual([
+        `dynamic `,
+        1,
+        ' translated',
+        '*',
+        `dynamic `,
+        1,
+        ' translated',
+        '*',
+        `dynamic `,
+        1,
+        ' translated',
+      ])
+    })
+  })
 })

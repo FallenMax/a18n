@@ -102,4 +102,15 @@ export interface A18n {
   DEBUG_reset(): void
 
   DEBUG_print(): void
+
+  /**
+   * repeat translated string/array multiple times, so that ui issues like text overflow can be spotted easily
+   *
+   * @param count how many times to repeat the text
+   * @param separator separator between repeated text, default to ` `
+   */
+  DEBUG_setRepeat(
+    count: number | undefined,
+    separator?: string | undefined,
+  ): void
 }

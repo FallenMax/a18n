@@ -175,6 +175,13 @@ If `moduleName` is provided, this a18n instance will select `resource[moduleName
 
 See [Q & A](#2-when-do-i-need-to-specify-a-namespace) for more background.
 
+#### a18n.DEBUG_setRepeat(repeatCount, separator?)
+
+Repeat translated string/array multiple times, so that UI issues like text overflow can be spotted easily.
+
+- count: how many times to repeat the text
+- separator: separator between repeated text, default to ` ` (a space)
+
 ### CLI
 
 See: `npx a18n --help`
