@@ -99,13 +99,7 @@ export const purgeCode = (code: string): string => {
               ) {
                 if (t.isJSXExpressionContainer(gParentPath.node)) {
                   const { quasis = [], expressions = [] } = node
-                  const elements: (
-                    | t.JSXElement
-                    | t.JSXFragment
-                    | t.JSXText
-                    | t.JSXExpressionContainer
-                    | t.JSXSpreadChild
-                  )[] = []
+                  const elements: t.Node[] = []
                   quasis.forEach((quasi, i) => {
                     const text = quasi.value.cooked ?? quasi.value.raw ?? ''
                     if (text) {
@@ -113,25 +107,14 @@ export const purgeCode = (code: string): string => {
                     }
                     const exp = expressions[i]
                     if (exp) {
-                      if (
-                        t.isJSXElement(exp) ||
-                        t.isJSXFragment(exp) ||
-                        t.isJSXText(exp) ||
-                        t.isJSXExpressionContainer(exp) ||
-                        t.isJSXSpreadChild(exp)
-                      ) {
-                        elements.push(exp)
-                      } else {
-                        elements.push(t.jsxExpressionContainer(exp))
-                      }
+                      elements.push(exp)
                     }
                   })
 
+                  // FIXME
                   // Babel's "replaceWithMultiple" adds unnecessary parentheses
                   // https://stackoverflow.com/questions/55648184/babels-replacewithmultiple-adds-unnecessary-parentheses
-
                   gParentPath.replaceWithMultiple(elements)
-                  // gParentPath.replaceWithMultiple(elements)
                 } else {
                   const { quasis = [], expressions = [] } = node
                   const elements: t.Expression[] = []
@@ -142,7 +125,7 @@ export const purgeCode = (code: string): string => {
                       ),
                     )
                     if (expressions[i]) {
-                      elements.push(expressions[i])
+                      elements.push(expressions[i] as t.Expression)
                     }
                   })
 
