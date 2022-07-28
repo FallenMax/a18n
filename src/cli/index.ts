@@ -26,7 +26,7 @@ const args = parseArgs(process.argv.slice(2), {
     'module-name-update',
   ],
 })
-const [command, ...restArgs] = args._
+const [command, ...restArgs] = args._ as string[]
 const isTTY = process.stdin.isTTY
 
 const getFileList = (path: string | undefined): string[] | undefined => {
