@@ -83,3 +83,7 @@ a ||= b
 // handle \n correctly
 const staticTextWithLf = '你好\n世界'
 const dynamicTextWithLf = `你好\n${'世界'}`
+
+// export type syntax
+type SomeType = number
+export { type SomeType }

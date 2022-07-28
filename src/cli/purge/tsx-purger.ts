@@ -130,7 +130,7 @@ export const purgeCode = (code: string): string => {
                   // Babel's "replaceWithMultiple" adds unnecessary parentheses
                   // https://stackoverflow.com/questions/55648184/babels-replacewithmultiple-adds-unnecessary-parentheses
 
-                  gParentPath.replaceInline(elements)
+                  gParentPath.replaceWithMultiple(elements)
                   // gParentPath.replaceWithMultiple(elements)
                 } else {
                   const { quasis = [], expressions = [] } = node

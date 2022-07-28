@@ -87,3 +87,7 @@ a ||= b
 const staticTextWithLf = a18n('你好\n世界-1')
 const dynamicTextWithLf = a18n`你好
 ${a18n('世界-1')}-1`
+
+// export type syntax
+type SomeType = number
+export { type SomeType }

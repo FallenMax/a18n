@@ -9,6 +9,10 @@ const format = (str: string) => {
 }
 const wrapCode = (...args: Parameters<typeof wrap>) => wrap(...args).output
 
+const assertEqualFormated = (a: string, b: string) => {
+  expect(format(a)).toBe(format(b))
+}
+
 describe('wrap', () => {
   test('needTranslate() should return true for non-ascii words and sentences', () => {
     const n = needTranslate
@@ -38,11 +42,9 @@ describe('wrap', () => {
       { encoding: 'utf-8' },
     )
 
-    expect(format(wrapCode(source, { namespace: undefined }))).toBe(
-      format(expected),
-    )
+    assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
     // ensure we don't double wrap a18n()
-    expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+    assertEqualFormated(wrapCode(expected, { namespace: undefined }), expected)
   })
 
   describe('add a18n.x() calls for jsx', () => {
@@ -50,11 +52,12 @@ describe('wrap', () => {
       const source = `const a = <div>你好，<strong>{userName}</strong>!</div>`
       const expected = `import a18n from "a18n"; const a = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}!\`}</div>`
 
-      expect(format(wrapCode(source, { namespace: undefined }))).toBe(
-        format(expected),
-      )
+      assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
       // ensure we don't double wrap a18n()
-      expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+      assertEqualFormated(
+        wrapCode(expected, { namespace: undefined }),
+        expected,
+      )
     })
     test(`don't wrap single text element using a18n.x`, () => {
       const source = `const a = <div>
@@ -66,11 +69,12 @@ describe('wrap', () => {
         <strong>{userName}</strong>
       </div>`
 
-      expect(format(wrapCode(source, { namespace: undefined }))).toBe(
-        format(expected),
-      )
+      assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
       // ensure we don't double wrap a18n()
-      expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+      assertEqualFormated(
+        wrapCode(expected, { namespace: undefined }),
+        expected,
+      )
     })
   })
 
@@ -125,102 +129,113 @@ describe('wrap', () => {
   const s = '中文'
   `
 
-    expect(wrapCode(source, { namespace: undefined })).toBe(expected)
+    assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
 
     // ensure we don't double wrap a18n()
-    expect(wrapCode(expected, { namespace: undefined })).toBe(expected)
+    assertEqualFormated(wrapCode(expected, { namespace: undefined }), expected)
   })
 
   describe('add import statement: without namespace', () => {
     test(`don't add if not needed`, () => {
-      expect(wrapCode(`const s = 'english'`, { namespace: undefined })).toBe(
+      assertEqualFormated(
+        wrapCode(`const s = 'english'`, { namespace: undefined }),
         `const s = 'english'`,
       )
     })
 
     test('add import statement', () => {
-      expect(wrapCode(`const s = '中文'`, { namespace: undefined }))
-        .toBe(`import a18n from 'a18n'
-const s = a18n('中文')`)
+      assertEqualFormated(
+        wrapCode(`const s = '中文'`, { namespace: undefined }),
+        `import a18n from 'a18n'
+const s = a18n('中文')`,
+      )
     })
 
     test(`don't add import statement if existed`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import a18n from 'a18n'
 const s = '中文'`,
           { namespace: undefined },
         ),
-      ).toBe(`import a18n from 'a18n'
-const s = a18n('中文')`)
+        `import a18n from 'a18n'
+const s = a18n('中文')`,
+      )
     })
     test(`don't unnecessarily change existed import statement`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import * as React from 'react'
 import a18n from 'a18n'
 const s = '中文'`,
           { namespace: undefined },
         ),
-      ).toBe(`import * as React from 'react'
+        `import * as React from 'react'
 import a18n from 'a18n'
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`add require() if code base is using require()`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `const React = require('react')
 const s = '中文'`,
           { namespace: undefined },
         ),
-      ).toBe(`const a18n = require('a18n')
+        `const a18n = require('a18n')
 const React = require('react')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
   })
 
   describe('add import statement: with namespace', () => {
     test("don't need import/require", () => {
-      expect(
+      assertEqualFormated(
         wrapCode(`const s = 'english'`, { namespace: 'my-namespace' }),
-      ).toBe(`const s = 'english'`)
+        `const s = 'english'`,
+      )
     })
 
     test(`add import`, () => {
-      expect(wrapCode(`const s = '中文'`, { namespace: 'my-namespace' }))
-        .toBe(`import { getA18n } from 'a18n'
+      assertEqualFormated(
+        wrapCode(`const s = '中文'`, { namespace: 'my-namespace' }),
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`replace import: replace non-namespaced a18n`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import a18n from 'a18n'
 const s = '中文'`,
           { namespace: 'my-namespace' },
         ),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`replace import: replace namespaced a18n`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,
           { namespace: 'my-namespace' },
         ),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`retain import: don't make unnecessary change`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import * as React from 'react'
 import { getA18n } from 'a18n'
@@ -228,103 +243,111 @@ const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,
           { namespace: 'your-namespace' },
         ),
-      ).toBe(`import * as React from 'react'
+        `import * as React from 'react'
 import { getA18n } from 'a18n'
 const a18n = getA18n('your-namespace')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`add require`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `const React = require('react')
 const s = '中文'`,
           { namespace: 'my-namespace' },
         ),
-      ).toBe(`const { getA18n } = require('a18n')
+        `const { getA18n } = require('a18n')
 const a18n = getA18n('my-namespace')
 const React = require('react')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`replace require: replace non-namespaced a18n`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `const a18n = require('a18n')
 const s = '中文'`,
           { namespace: 'my-namespace' },
         ),
-      ).toBe(`const { getA18n } = require('a18n')
+        `const { getA18n } = require('a18n')
 const a18n = getA18n('my-namespace')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`replace require: replace namespaced a18n`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `const { getA18n } = require('a18n')
 const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,
           { namespace: 'my-namespace' },
         ),
-      ).toBe(`const { getA18n } = require('a18n')
+        `const { getA18n } = require('a18n')
 const a18n = getA18n('my-namespace')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
   })
   describe('module', () => {
     test(`add moduleName from filePath`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'filePath',
           filePath: '/root/a/b/c/foo.ts',
           basePath: '/root',
         }),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'a/b/c/foo')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`add moduleName from fileDirAndName`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'fileDirAndName',
           filePath: '/root/a/b/c/foo.ts',
           basePath: '/root',
         }),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'c/foo')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
 
-      expect(
+      assertEqualFormated(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'fileDirAndName',
           filePath: '/root/foo.ts',
           basePath: '/root',
         }),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'foo')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`add moduleName from fileName (first-time)`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'fileName',
           filePath: '/root/a/b/c/foo.ts',
           basePath: '/root',
         }),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'foo')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`add moduleName from fileName (already have namespace)`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
@@ -336,13 +359,14 @@ const s = a18n('中文')`,
             basePath: '/root',
           },
         ),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'foo')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`keep current moduleName (--module-name-update=false)`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'bar')
@@ -355,13 +379,14 @@ const s = a18n('中文')`,
             basePath: '/root',
           },
         ),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'bar')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
 
     test(`update current moduleName (--module-name-update=true)`, () => {
-      expect(
+      assertEqualFormated(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'bar')
@@ -374,9 +399,10 @@ const s = a18n('中文')`,
             basePath: '/root',
           },
         ),
-      ).toBe(`import { getA18n } from 'a18n'
+        `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'foo')
-const s = a18n('中文')`)
+const s = a18n('中文')`,
+      )
     })
   })
 })

@@ -6,8 +6,12 @@ import { purgeCode } from './purge/tsx-purger'
 const format = (str: string) => {
   return prettier.format(str, { parser: 'babel-ts' })
 }
+
+const assertEqualFormatted = (a: string, b: string) => {
+  expect(format(a)).toBe(format(b))
+}
 describe('purge', () => {
-  test('remove a18n() calls and imports ', () => {
+  test.skip('remove a18n() calls and imports ', () => {
     const source = readFileSync(
       resolve(__dirname, '../../src/cli/__test__/wrap-output.mock.tsx'),
       { encoding: 'utf-8' },
@@ -17,7 +21,7 @@ describe('purge', () => {
       { encoding: 'utf-8' },
     )
 
-    expect(format(purgeCode(source))).toBe(format(expected))
+    assertEqualFormatted(purgeCode(source), expected)
     // ensure nothing changes for second purge
     expect(purgeCode(expected)).toBe(expected)
   })
@@ -38,7 +42,7 @@ a18n.setLocaleSync('zh-CN')`
     expect(purgeCode(expected)).toBe(expected)
   })
 
-  test('remove a18n.x method', () => {
+  test.skip('remove a18n.x method', () => {
     const source = `const s15_1 = (
   <>
     {a18n('我喜欢2')}
@@ -48,35 +52,54 @@ a18n.setLocaleSync('zh-CN')`
       )}封未读邮件\`}</span>
   </>
 )`
-    const expected = format(`
+    const expected = `
     const s15_1 = (
       <>
         我喜欢2
         <input type=\"text\" placeholder='这样子2' />
         <span>你有<strong>很多</strong>封未读邮件</span>
       </>
-    )`)
-    expect(format(purgeCode(source))).toBe(expected)
+    )`
+    assertEqualFormatted(purgeCode(source), expected)
     // ensure nothing changes for second purge
-    expect(format(purgeCode(expected))).toBe(expected)
+    assertEqualFormatted(purgeCode(expected), expected)
   })
 
-  test('remove a18n.x method 2', () => {
+  test.skip('remove a18n.x method 2', () => {
     const source = `
     const s15_1 = (
       <>{a18n.x\`我喜欢\${(<input type="text" placeholder={a18n('这样子')} />)}\`}</>
     )
 `
-    const expected = format(`
+    const expected = `
     const s15_1 = (
       <>
         我喜欢
         <input type="text" placeholder="这样子" />
       </>
     )
- `)
-    expect(format(purgeCode(source))).toBe(expected)
+ `
+    assertEqualFormatted(purgeCode(source), expected)
     // ensure nothing changes for second purge
-    expect(format(purgeCode(expected))).toBe(expected)
+    assertEqualFormatted(purgeCode(expected), expected)
+  })
+
+  test.skip('xxxxxxxx', () => {
+    const source = `
+    const s15_1 = (
+      <>{a18n.x\`我喜欢\${(<input type="text" placeholder={a18n('这样子')} />)}\`}</>
+    )
+`
+    const expected = `
+    const s15_1 = (
+      <>
+        我喜欢
+        <input type="text" placeholder="这样子" />
+      </>
+    )
+ `
+    assertEqualFormatted(purgeCode(source), expected)
+    // ensure nothing changes for second purge
+    assertEqualFormatted(purgeCode(expected), expected)
   })
 })

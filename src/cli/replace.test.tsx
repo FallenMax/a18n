@@ -12,6 +12,10 @@ const format = (str: string) => {
 const replaceCode = (...args: Parameters<typeof replace>) =>
   replace(...args).output
 
+const assertEqualFormatted = (a: string, b: string) => {
+  expect(format(a)).toBe(format(b))
+}
+
 describe('replace', () => {
   test('replace texts inside a18n() calls ', () => {
     const source = readFileSync(
@@ -30,49 +34,45 @@ describe('replace', () => {
       resource[key] = values[i]
     })
 
-    expect(
-      format(
-        replaceCode(source, {
-          locale: 'zh-CN', // not used, so just pass anything
-          resource,
-        }),
-      ),
-    ).toBe(format(expected))
+    assertEqualFormatted(
+      replaceCode(source, {
+        locale: 'zh-CN', // not used, so just pass anything
+        resource,
+      }),
+      expected,
+    )
   })
   test('replace texts using module resource', () => {
-    expect(
-      format(
-        replaceCode(
-          `
+    assertEqualFormatted(
+      replaceCode(
+        `
 const a18n = getA18n('my-ns', 'x')
 const a = a18n('a')
 const b = a18n\`b\${1}\`
 const c = a18n.x\`b\${1}\`
-      `,
-          {
-            locale: 'zh-CN', // not used, so just pass anything
-            resource: {
-              a: 'a_',
-              'b%s': 'b%s_',
-              x: {
-                a: 'ax',
-                'b%s': 'b%sx',
-              },
-              y: {
-                a: 'ay',
-                'b%s': 'b%sy',
-              },
+  `,
+        {
+          locale: 'zh-CN', // not used, so just pass anything
+          resource: {
+            a: 'a_',
+            'b%s': 'b%s_',
+            x: {
+              a: 'ax',
+              'b%s': 'b%sx',
+            },
+            y: {
+              a: 'ay',
+              'b%s': 'b%sy',
             },
           },
-        ),
+        },
       ),
-    ).toBe(
-      format(`
+      `
 const a18n = getA18n('my-ns', 'x')
 const a = a18n('ax')
 const b = a18n\`b\${1}x\`
 const c = a18n.x\`b\${1}x\`
-    `),
+  `,
     )
   })
   test.todo('replace texts: should not replace more than once')
