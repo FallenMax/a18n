@@ -1,6 +1,6 @@
 {
   "name": "a18n",
-  "version": "1.11.3",
+  "version": "1.11.4",
   "description": "Automated I18n solution for JavaScript/TypeScript/React, effortlessly add I18n support for existing projects.",
   "main": "dist/i18n/index.js",
   "author": "FallenMax <FallenMax@gmail.com>",
