@@ -1,3 +1,4 @@
+import assert from 'assert'
 import mkdirp from 'mkdirp'
 import { join } from 'path'
 import { FormattedText, LocaleResource, SourceText } from '../types'
@@ -177,4 +178,9 @@ export const extract = async (
     const fileContent = exporters.json(newResource)
     writeFile(filePath, fileContent)
   })
+
+  assert(
+    results.every((r) => r.ok),
+    'Some files failed to process',
+  )
 }

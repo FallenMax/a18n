@@ -1,6 +1,6 @@
+import assert from 'assert'
 import { join } from 'path'
 import type * as TsxReplacer from './replace/tsx-replacer'
-import { ExitCode } from './util/exit_code'
 import { isFile, readFile } from './util/file'
 import { processFiles } from './util/process_file'
 
@@ -56,9 +56,25 @@ export const replace = async (files: string[], params: ReplaceParams) => {
     )
     console.warn(`---`)
   }
-  const replaceOk = await replaceFiles(files, params)
+  const { localeRoot, locale } = params
+  const filePath = join(localeRoot, `${locale}.json`)
+  const resource = isFile(filePath) && importers.json(readFile(filePath))
 
-  if (!replaceOk) {
-    process.exit(ExitCode.ReplaceError)
-  }
+  const results = await processFiles<typeof TsxReplacer, 'replaceFile'>(
+    files,
+    replacerPath,
+    'replaceFile',
+    {
+      silent: params.silent,
+      exclude: params.exclude,
+      write: params.write,
+      locale: params.locale,
+      resource,
+    },
+  )
+
+  assert(
+    results.every((r) => r.ok),
+    'Some files failed to process',
+  )
 }

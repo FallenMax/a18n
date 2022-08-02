@@ -3,5 +3,4 @@ export enum ExitCode {
   InvalidArgument = 253,
   UnknownError = 254,
   CheckError = 1,
-  ReplaceError = 2,
 }

@@ -9,7 +9,7 @@ export const parse = (code: string) => {
           tokens: true,
           sourceType: 'module',
           plugins: [
-            'jsx',
+            'jsx', // should only be enabled for .jsx/.tsx though
             'typescript',
             'objectRestSpread',
             'asyncGenerators',

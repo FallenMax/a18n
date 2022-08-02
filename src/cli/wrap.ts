@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { processFiles } from './util/process_file'
 import type * as TsxWrapper from './wrap/tsx-wrapper'
 const wrapperPath = require.resolve('./wrap/tsx-wrapper')
@@ -17,10 +18,15 @@ export const wrap = async (
     console.warn(`---`)
   }
 
-  await processFiles<typeof TsxWrapper, 'wrapFile'>(
+  const results = await processFiles<typeof TsxWrapper, 'wrapFile'>(
     files,
     wrapperPath,
     'wrapFile',
     params,
+  )
+
+  assert(
+    results.every((r) => r.ok),
+    'Some files failed to process',
   )
 }

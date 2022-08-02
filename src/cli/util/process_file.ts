@@ -1,5 +1,9 @@
+import { codeFrameColumns } from '@babel/code-frame'
 import JestWorker from 'jest-worker'
 import * as os from 'os'
+
+import chalk from 'chalk'
+import { readFileSync } from 'fs'
 import parallelMap from 'p-map'
 import { keepTruthy } from './keep_truthty'
 
@@ -17,7 +21,7 @@ export const processFiles = async <
     silent?: boolean
     exclude?: string | undefined
   },
-  Result = ReturnType<Worker[FuncName]>
+  Result = ReturnType<Worker[FuncName]>,
 >(
   files: string[],
   processorPath: string,
@@ -35,7 +39,7 @@ export const processFiles = async <
 
   const processFile = async (file: string) => {
     if (params.silent !== true) {
-      console.info(file)
+      console.info(chalk.gray(file))
     }
     let result: any = { ok: false }
     try {
@@ -49,15 +53,38 @@ export const processFiles = async <
 
     if (!result.ok) {
       const error = result.error
-      const loc = error?.loc
+      const tryExtractLocation = (stack?: string) => {
+        if (!stack) return undefined
+        const [firstLine] = stack.split('\n')
+        if (!firstLine) return undefined
+        const [_, line, column] = firstLine.match(/\((\d+):(\d+)\)$/) || []
+        return _ ? { line, column } : undefined
+      }
+      const loc = error?.loc ?? tryExtractLocation(error?.stack)
       if (loc) {
         console.warn(
-          `[a18n] error processing: ${file}:${loc.line}:${loc.column}`,
+          chalk.red`\n[a18n] error processing: \n${file}:${loc.line}:${loc.column}\n`,
         )
+        try {
+          const content = readFileSync(file, 'utf-8')
+          const frame = codeFrameColumns(
+            content,
+            {
+              start: loc,
+            },
+            {
+              highlightCode: true,
+              // forceColor: true,
+            },
+          )
+          console.info(frame)
+          console.info('')
+        } catch (error) {}
       } else {
-        console.warn(`[a18n] error processing: ${file}`)
+        console.warn(chalk.red`[a18n] error processing: ${file}`)
       }
       console.error(error)
+      console.info('')
     }
 
     return result
@@ -79,11 +106,14 @@ export const processFiles = async <
   )
 
   if (errors.length) {
-    console.warn('There are errors when processing files below:')
-    console.warn('---')
-    errors.forEach((e) => {
-      console.warn(`${e.file}`)
-    })
+    console.warn(chalk.red`
+------------------
+${errors.length} file(s) failed to process, see log for details
+
+${errors.map((e) => e.file).join('\n')}
+------------------
+
+`)
   }
 
   return results

@@ -1,3 +1,4 @@
+import assert from 'assert'
 import type * as TsxPurger from './purge/tsx-purger'
 import { processFiles } from './util/process_file'
 const purgerPath = require.resolve('./purge/tsx-purger')
@@ -18,10 +19,15 @@ export const purge = async (
     console.info(`---`)
   }
 
-  await processFiles<typeof TsxPurger, 'purgeFile'>(
+  const results = await processFiles<typeof TsxPurger, 'purgeFile'>(
     files,
     purgerPath,
     'purgeFile',
     params,
+  )
+
+  assert(
+    results.every((r) => r.ok),
+    'Some files failed to process',
   )
 }
