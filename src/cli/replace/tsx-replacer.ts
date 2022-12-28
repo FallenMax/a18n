@@ -30,7 +30,7 @@ const translateTemplateLiteral = (
     textParts,
   })
   const results = translator.x(
-    (textParts as any) as TemplateStringsArray, // we are not using .raw property in a18n
+    textParts as any as TemplateStringsArray, // we are not using .raw property in a18n
     ...expressions,
   )
 
@@ -58,15 +58,15 @@ const translateTemplateLiteral = (
 export const replaceCode = (
   code: string,
   options: {
-    filePath?: string
+    filePath: string
     locale: string
     resource: LocaleResource
   },
 ): {
   output: string
 } => {
-  const ast = parse(code)
   const { locale, resource, filePath } = options
+  const ast = parse(code, filePath)
   const moduleName = extractModuleName(ast)
   const a18n = getA18n('ns', moduleName) // ns not important here
 

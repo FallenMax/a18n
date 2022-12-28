@@ -12,18 +12,20 @@ const assertEqualFormatted = (a: string, b: string) => {
 }
 describe('purge', () => {
   test.skip('remove a18n() calls and imports ', () => {
-    const source = readFileSync(
-      resolve(__dirname, '../../src/cli/__test__/wrap-output.mock.tsx'),
-      { encoding: 'utf-8' },
+    const sourcePath = resolve(
+      __dirname,
+      '../../src/cli/__test__/wrap-output.mock.tsx',
     )
-    const expected = readFileSync(
-      resolve(__dirname, '../../src/cli/__test__/purge-output.mock.tsx'),
-      { encoding: 'utf-8' },
+    const source = readFileSync(sourcePath, { encoding: 'utf-8' })
+    const expectedPath = resolve(
+      __dirname,
+      '../../src/cli/__test__/purge-output.mock.tsx',
     )
+    const expected = readFileSync(expectedPath, { encoding: 'utf-8' })
 
-    assertEqualFormatted(purgeCode(source), expected)
+    assertEqualFormatted(purgeCode(source, sourcePath), expected)
     // ensure nothing changes for second purge
-    expect(purgeCode(expected)).toBe(expected)
+    expect(purgeCode(expected, expectedPath)).toBe(expected)
   })
 
   test('remove a18n setup methods', () => {
@@ -37,9 +39,9 @@ const a18n_ = require('a18n')
 a18n.addLocaleResource('en-US', {})
 a18n.setLocaleSync('zh-CN')`
     const expected = ``
-    expect(purgeCode(source)).toBe(expected)
+    expect(purgeCode(source, 'FAKE/PATH.tsx')).toBe(expected)
     // ensure nothing changes for second purge
-    expect(purgeCode(expected)).toBe(expected)
+    expect(purgeCode(expected, 'FAKE/PATH.tsx')).toBe(expected)
   })
 
   test.skip('remove a18n.x method', () => {
@@ -60,9 +62,9 @@ a18n.setLocaleSync('zh-CN')`
         <span>你有<strong>很多</strong>封未读邮件</span>
       </>
     )`
-    assertEqualFormatted(purgeCode(source), expected)
+    assertEqualFormatted(purgeCode(source, 'FAKE/PATH.tsx'), expected)
     // ensure nothing changes for second purge
-    assertEqualFormatted(purgeCode(expected), expected)
+    assertEqualFormatted(purgeCode(expected, 'FAKE/PATH.tsx'), expected)
   })
 
   test.skip('remove a18n.x method 2', () => {
@@ -79,9 +81,9 @@ a18n.setLocaleSync('zh-CN')`
       </>
     )
  `
-    assertEqualFormatted(purgeCode(source), expected)
+    assertEqualFormatted(purgeCode(source, 'FAKE/PATH.tsx'), expected)
     // ensure nothing changes for second purge
-    assertEqualFormatted(purgeCode(expected), expected)
+    assertEqualFormatted(purgeCode(expected, 'FAKE/PATH.tsx'), expected)
   })
 
   test.skip('xxxxxxxx', () => {
@@ -98,8 +100,8 @@ a18n.setLocaleSync('zh-CN')`
       </>
     )
  `
-    assertEqualFormatted(purgeCode(source), expected)
+    assertEqualFormatted(purgeCode(source, 'FAKE/PATH.tsx'), expected)
     // ensure nothing changes for second purge
-    assertEqualFormatted(purgeCode(expected), expected)
+    assertEqualFormatted(purgeCode(expected, 'FAKE/PATH.tsx'), expected)
   })
 })

@@ -102,7 +102,7 @@ export const wrapCode = (
     checkOnly = false,
     moduleNameUpdate = true,
   }: WrapOptions & {
-    filePath?: string
+    filePath: string
   },
 ): {
   output: string
@@ -115,7 +115,7 @@ export const wrapCode = (
     }
   }
 
-  const ast = parse(code)
+  const ast = parse(code, filePath)
   const existModuleName = extractModuleName(ast)
   const newModuleName: string | undefined = (() => {
     if (!moduleName) return existModuleName

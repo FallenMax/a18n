@@ -33,18 +33,26 @@ describe('wrap', () => {
     expect(n('⌘')).toBe(false)
   })
   test('add a18n() calls ', () => {
-    const source = readFileSync(
-      resolve(__dirname, '../../src/cli/__test__/wrap-input.mock.tsx'),
-      { encoding: 'utf-8' },
+    const sourcePath = resolve(
+      __dirname,
+      '../../src/cli/__test__/wrap-input.mock.tsx',
     )
-    const expected = readFileSync(
-      resolve(__dirname, '../../src/cli/__test__/wrap-output.mock.tsx'),
-      { encoding: 'utf-8' },
+    const source = readFileSync(sourcePath, { encoding: 'utf-8' })
+    const expectedPath = resolve(
+      __dirname,
+      '../../src/cli/__test__/wrap-output.mock.tsx',
     )
+    const expected = readFileSync(expectedPath, { encoding: 'utf-8' })
 
-    assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
+    assertEqualFormated(
+      wrapCode(source, { namespace: undefined, filePath: sourcePath }),
+      expected,
+    )
     // ensure we don't double wrap a18n()
-    assertEqualFormated(wrapCode(expected, { namespace: undefined }), expected)
+    assertEqualFormated(
+      wrapCode(expected, { namespace: undefined, filePath: sourcePath }),
+      expected,
+    )
   })
 
   describe('add a18n.x() calls for jsx', () => {
@@ -52,10 +60,13 @@ describe('wrap', () => {
       const source = `const a = <div>你好，<strong>{userName}</strong>!</div>`
       const expected = `import a18n from "a18n"; const a = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}!\`}</div>`
 
-      assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
+      assertEqualFormated(
+        wrapCode(source, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
+        expected,
+      )
       // ensure we don't double wrap a18n()
       assertEqualFormated(
-        wrapCode(expected, { namespace: undefined }),
+        wrapCode(expected, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
         expected,
       )
     })
@@ -69,10 +80,13 @@ describe('wrap', () => {
         <strong>{userName}</strong>
       </div>`
 
-      assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
+      assertEqualFormated(
+        wrapCode(source, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
+        expected,
+      )
       // ensure we don't double wrap a18n()
       assertEqualFormated(
-        wrapCode(expected, { namespace: undefined }),
+        wrapCode(expected, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
         expected,
       )
     })
@@ -83,7 +97,10 @@ describe('wrap', () => {
       resolve(__dirname, '../../src/cli/__test__/wrap-input.mock.tsx'),
       { encoding: 'utf-8' },
     )
-    const { sourceTexts } = wrap(source, { checkOnly: true })
+    const { sourceTexts } = wrap(source, {
+      checkOnly: true,
+      filePath: 'FAKE/PATH.tsx',
+    })
     const keys = sourceTexts.map(sourceTextToKey)
     expect(keys).toEqual([
       '中文',
@@ -113,7 +130,10 @@ describe('wrap', () => {
         生活
       </div>
     )`
-    const { sourceTexts } = wrap(source, { checkOnly: true })
+    const { sourceTexts } = wrap(source, {
+      checkOnly: true,
+      filePath: 'FAKE/PATH.tsx',
+    })
     const keys = sourceTexts.map(sourceTextToKey)
     expect(keys).toEqual(['我喜欢%s生活', '这样子'])
   })
@@ -129,23 +149,35 @@ describe('wrap', () => {
   const s = '中文'
   `
 
-    assertEqualFormated(wrapCode(source, { namespace: undefined }), expected)
+    assertEqualFormated(
+      wrapCode(source, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
+      expected,
+    )
 
     // ensure we don't double wrap a18n()
-    assertEqualFormated(wrapCode(expected, { namespace: undefined }), expected)
+    assertEqualFormated(
+      wrapCode(expected, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
+      expected,
+    )
   })
 
   describe('add import statement: without namespace', () => {
     test(`don't add if not needed`, () => {
       assertEqualFormated(
-        wrapCode(`const s = 'english'`, { namespace: undefined }),
+        wrapCode(`const s = 'english'`, {
+          namespace: undefined,
+          filePath: 'FAKE/PATH.tsx',
+        }),
         `const s = 'english'`,
       )
     })
 
     test('add import statement', () => {
       assertEqualFormated(
-        wrapCode(`const s = '中文'`, { namespace: undefined }),
+        wrapCode(`const s = '中文'`, {
+          namespace: undefined,
+          filePath: 'FAKE/PATH.tsx',
+        }),
         `import a18n from 'a18n'
 const s = a18n('中文')`,
       )
@@ -156,7 +188,7 @@ const s = a18n('中文')`,
         wrapCode(
           `import a18n from 'a18n'
 const s = '中文'`,
-          { namespace: undefined },
+          { namespace: undefined, filePath: 'FAKE/PATH.tsx' },
         ),
         `import a18n from 'a18n'
 const s = a18n('中文')`,
@@ -168,7 +200,7 @@ const s = a18n('中文')`,
           `import * as React from 'react'
 import a18n from 'a18n'
 const s = '中文'`,
-          { namespace: undefined },
+          { namespace: undefined, filePath: 'FAKE/PATH.tsx' },
         ),
         `import * as React from 'react'
 import a18n from 'a18n'
@@ -181,7 +213,7 @@ const s = a18n('中文')`,
         wrapCode(
           `const React = require('react')
 const s = '中文'`,
-          { namespace: undefined },
+          { namespace: undefined, filePath: 'FAKE/PATH.tsx' },
         ),
         `const a18n = require('a18n')
 const React = require('react')
@@ -193,14 +225,20 @@ const s = a18n('中文')`,
   describe('add import statement: with namespace', () => {
     test("don't need import/require", () => {
       assertEqualFormated(
-        wrapCode(`const s = 'english'`, { namespace: 'my-namespace' }),
+        wrapCode(`const s = 'english'`, {
+          namespace: 'my-namespace',
+          filePath: 'FAKE/PATH.tsx',
+        }),
         `const s = 'english'`,
       )
     })
 
     test(`add import`, () => {
       assertEqualFormated(
-        wrapCode(`const s = '中文'`, { namespace: 'my-namespace' }),
+        wrapCode(`const s = '中文'`, {
+          namespace: 'my-namespace',
+          filePath: 'FAKE/PATH.tsx',
+        }),
         `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
 const s = a18n('中文')`,
@@ -212,7 +250,7 @@ const s = a18n('中文')`,
         wrapCode(
           `import a18n from 'a18n'
 const s = '中文'`,
-          { namespace: 'my-namespace' },
+          { namespace: 'my-namespace', filePath: 'FAKE/PATH.tsx' },
         ),
         `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
@@ -226,7 +264,7 @@ const s = a18n('中文')`,
           `import { getA18n } from 'a18n'
 const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,
-          { namespace: 'my-namespace' },
+          { namespace: 'my-namespace', filePath: 'FAKE/PATH.tsx' },
         ),
         `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
@@ -241,7 +279,7 @@ const s = a18n('中文')`,
 import { getA18n } from 'a18n'
 const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,
-          { namespace: 'your-namespace' },
+          { namespace: 'your-namespace', filePath: 'FAKE/PATH.tsx' },
         ),
         `import * as React from 'react'
 import { getA18n } from 'a18n'
@@ -255,7 +293,7 @@ const s = a18n('中文')`,
         wrapCode(
           `const React = require('react')
 const s = '中文'`,
-          { namespace: 'my-namespace' },
+          { namespace: 'my-namespace', filePath: 'FAKE/PATH.tsx' },
         ),
         `const { getA18n } = require('a18n')
 const a18n = getA18n('my-namespace')
@@ -269,7 +307,7 @@ const s = a18n('中文')`,
         wrapCode(
           `const a18n = require('a18n')
 const s = '中文'`,
-          { namespace: 'my-namespace' },
+          { namespace: 'my-namespace', filePath: 'FAKE/PATH.tsx' },
         ),
         `const { getA18n } = require('a18n')
 const a18n = getA18n('my-namespace')
@@ -283,7 +321,7 @@ const s = a18n('中文')`,
           `const { getA18n } = require('a18n')
 const a18n = getA18n('your-namespace')
 const s = a18n('中文')`,
-          { namespace: 'my-namespace' },
+          { namespace: 'my-namespace', filePath: 'FAKE/PATH.tsx' },
         ),
         `const { getA18n } = require('a18n')
 const a18n = getA18n('my-namespace')

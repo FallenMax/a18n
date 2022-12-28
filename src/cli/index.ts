@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import parseArgs from 'yargs-parser'
@@ -9,7 +10,6 @@ import { replace } from './replace'
 import { ExitCode } from './util/exit_code'
 import { getFiles, isDirectory, isSourceCode } from './util/file'
 import { wrap } from './wrap'
-import assert = require('assert')
 
 const args = parseArgs(process.argv.slice(2), {
   alias: {

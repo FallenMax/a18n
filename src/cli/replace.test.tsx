@@ -18,15 +18,16 @@ const assertEqualFormatted = (a: string, b: string) => {
 
 describe('replace', () => {
   test('replace texts inside a18n() calls ', () => {
-    const source = readFileSync(
-      resolve(__dirname, '../../src/cli/__test__/wrap-output.mock.tsx'),
-      { encoding: 'utf-8' },
+    const sourcePath = resolve(
+      __dirname,
+      '../../src/cli/__test__/wrap-output.mock.tsx',
     )
+    const source = readFileSync(sourcePath, { encoding: 'utf-8' })
     const expected = readFileSync(
       resolve(__dirname, '../../src/cli/__test__/replace-output.mock.tsx'),
       { encoding: 'utf-8' },
     )
-    const sourceTexts = extractCode(source, 'FAKE_PATH')
+    const sourceTexts = extractCode(source, 'FAKE/PATH.tsx')
     const keys = sourceTexts.map((t) => sourceTextToKey(t))
     const values = keys.map((k) => k + '-1') // no special meaning of `-1`, just create a predicatable value for each key
     const resource = {} as LocaleResource
@@ -38,6 +39,7 @@ describe('replace', () => {
       replaceCode(source, {
         locale: 'zh-CN', // not used, so just pass anything
         resource,
+        filePath: sourcePath,
       }),
       expected,
     )
@@ -52,6 +54,7 @@ const b = a18n\`b\${1}\`
 const c = a18n.x\`b\${1}\`
   `,
         {
+          filePath: 'FAKE_PATH/FAKE_FILE.tsx',
           locale: 'zh-CN', // not used, so just pass anything
           resource: {
             a: 'a_',

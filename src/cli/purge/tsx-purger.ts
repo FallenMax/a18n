@@ -19,8 +19,8 @@ const fromStringLiteral = (
   }
 }
 
-export const purgeCode = (code: string): string => {
-  const ast = parse(code)
+export const purgeCode = (code: string, filePath: string): string => {
+  const ast = parse(code, filePath)
 
   const lines = code.split('\n')
 
@@ -199,7 +199,7 @@ export const purgeFile = (
 ) => {
   try {
     const content = readFile(filePath)
-    const newContent = purgeCode(content)
+    const newContent = purgeCode(content, filePath)
 
     const changed = newContent !== content
     if (changed && params.write) {

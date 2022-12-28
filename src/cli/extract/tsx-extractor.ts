@@ -61,7 +61,7 @@ export const toDynamicText = (
 
 export const extractCode = (code: string, filePath: string): SourceText[] => {
   let sourceTexts: SourceText[] = []
-  const ast = parse(code)
+  const ast = parse(code, filePath)
 
   const moduleName = extractModuleName(ast)
 
