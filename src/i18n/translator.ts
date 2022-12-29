@@ -52,7 +52,7 @@ const doCompile = (parts: string[], resource: LocaleResource) => {
     typeof valueTemplate === 'string' ? valueTemplate : keyTemplate
 
   return templateString.split(/(%s|%\d)/g).map((item) => {
-    const pos = /^%(s|\d)$/g.exec(item)?.[1]
+    const [_, pos] = /^%(s|\d)$/g.exec(item) || []
     if (pos) {
       return pos === 's' ? 1 : Number(pos)
     } else {
