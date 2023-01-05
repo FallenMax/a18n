@@ -4,9 +4,7 @@
 
 [English](https://github.com/FallenMax/a18n/blob/master/README.md) | [中文](https://github.com/FallenMax/a18n/blob/master/README_zh-cn.md)
 
-Automated I18n solution for JavaScript/TypeScript/React.
-
-This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, making adding I18n support a breeze.
+a18n is an automated internationalization solution for JavaScript/TypeScript/React. This library uses AST manipulation to wrap and extract text in JS/TS/JSX/TSX files, making it easy to add internationalization support to your project.
 
 [![Screen Recoding](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif?raw=true)](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif)
 
@@ -16,51 +14,51 @@ This lib wraps and extracts text in js/ts/jsx/tsx files using AST manipulation, 
   - **Wrap** texts with translation calls (`a18n wrap`)
   - **Extract** texts from translation calls (`a18n extract`)
   - **Check** for untranslated text in code and resources (`a18n check`)
-  - **Replace** untranslated in code with translated ones (`a18n replace`)
+  - **Replace** untranslated text in code with translated ones (`a18n replace`)
   - **Purge** remove translation calls and imports (`a18n purge`)
-  - Support dynamic texts in ES6 Template String
-  - Support TypeScript
-  - Support React, or any framework that uses JSX
-  - Provides context for texts with `module` they belongs to
-  - Ignore lines or files with annotation comments
-  - Preserves original code formatting while modifying code as much as possible (though [prettier](https://github.com/prettier/prettier) is still recommended)
+  - Supports dynamic texts in ES6 Template Strings
+  - Supports TypeScript
+  - Supports React, or any framework that uses JSX
+  - Provides context for texts with the `module` they belong to
+  - Ignores lines or files with annotation comments
+  - Preserves original code formatting while minimizing modifications to code as much as possible (although using [prettier](https://github.com/prettier/prettier) is still recommended)
 - Runtime
-  - Translate static and dynamic texts using provided locale resource
-  - Tiny (~ 200 loc)
-  - Fast, dynamic texts are compiled into template at first run
+  - Translates static and dynamic texts using provided locale resources
+  - Small (~200 lines of code)
+  - Fast - dynamic texts are compiled into a template on the first run
 
 ## Getting Started
 
-> WARNING: existing project code will be modified, backup or commit before proceed
+> WARNING: Existing project code will be modified. Please make a backup or commit before proceeding.
 
-Install as project dependency (not devDependency, as `a18n` provides both CLI and runtime)
+Install as a project dependency (not a devDependency, as `a18n` provides both a CLI and runtime)
 
 ```sh
 npm install --save a18n
 ```
 
-Scan and modify code files (.js, .ts, .jsx, .tsx) in `src` directory, this will wrap CJK text strings with translation calls:
+Scan and modify code files (.js, .ts, .jsx, .tsx) in the src directory. This will wrap CJK text strings with translation calls:
 
-- `--namespace` serves the purpose to avoid conflict with same a18n instance from other dependencies
-- `--module-name` automatically provides context for each text, and helps distinguish texts from different modules
+- `--namespace` serves to avoid conflicts with the same a18n instance from other dependencies
+- `--module-name` automatically provides context for each text and helps distinguish texts from different modules
 
 ```sh
 npx a18n wrap src --write --namespace="my.unique.project.id" --module-name="fileDirAndName"
 ```
 
-Manually check for unintended modifications and fix them, you can:
+Manually check for unintended modifications and fix them. You can:
 
-- use comment `// @a18n-ignore` to ignore next line
-- use comment `/* @a18n-ignore-file */` to ignore entire file
+- Use the comment `// @a18n-ignore` to ignore the next line
+- Use the comment `/* @a18n-ignore-file */` to ignore the entire file
 
-Extract texts passed to translation calls (will generate `zh-CN.json`, `en.json` in `./locales` directory):
+Extract texts passed to translation calls (this will generate `zh-CN.json`, `en.json` in the `./locales` directory):
 
 ```sh
 npx a18n extract src ./locales --locales zh-CN,en
 ```
 
-Translate resources under `./locales` (e.g. from Chinese to English), after that we should have something like this:
-(key is added by `a18n` tool, value is filled by some human translator)
+Translate resources under `./locales` (e.g. from Chinese to English). After this, you should have something like this:
+(the key is added by the `a18n` tool, the value is filled in by a human translator)
 
 ```js
 {
@@ -72,14 +70,21 @@ Translate resources under `./locales` (e.g. from Chinese to English), after that
 
   // dynamic text
   "%s是最好吃的": "pizza is better than %s",
+
+  // with module context
+  "some.module: {
+    "%s是最好吃的": "noodle is better than %s",
+  }
 }
 ```
 
-Load translation resources and specify language at the start of your application, **this must be done BEFORE running any other code**
+Load translation resources and specify the language at the start of your application, **this must be done BEFORE running any other code**
 
 ```js
 import a18n from 'a18n'
-a18n.addLocaleResource('en', require('./en.json'))
+import en from './locales/en.json'
+
+a18n.addLocaleResource('en', en)
 a18n.setLocale('en')
 
 // now, a18n() will produce translated result
@@ -95,9 +100,9 @@ a18n`${food}是最好吃的` // === "pizza is better than A"
 
 #### a18n(text)
 
-> This function can/should be auto-added by `a18n wrap` command
+> This function can and should be auto-added by `a18n wrap` command
 
-Translate static text, `text` should be literal string (instead of variable), example:
+Translates static text, `text` should be literal string (instead of a variable). For example:
 
 ```js
 a18n('你好') // good
@@ -108,15 +113,15 @@ a18n(greeting) // bad, `a18n extract` cannot extract "你好" by analyzing code
 
 > This function can/should be auto-added by `a18n wrap` command
 
-Translate dynamic text.
+Translates dynamic text.
 
 This is an ES6 syntax called [Tagged Template Literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
 
 #### a18n.x\`text\${variable}\`
 
-> This function cannot be auto-added, and should be added by user.
+> This function cannot be auto-added and should be added by user.
 
-Translate dynamic text, returns an array containing translated parts.
+Translates dynamic text and returns an array containing translated parts.
 
 This method is useful for displaying mixed content.
 
@@ -132,17 +137,17 @@ Set locale to use.
 
 This method should be called BEFORE every `a18n` translation functions are called.
 
-`a18n` use `navigator.language` as initial value
+`a18n` use `navigator.language` as the initial value.
 
 #### a18n.addLocaleResource(locale, resource)
 
-Add resource for specified locale. Resource is usually extracted using `a18n extract` command.
+Adds a resource for the specified locale. The resource is usually extracted using the `a18n extract` command.
 
-Example resource:
+An example resource:
 
 ```json
 {
-  // missing translation, will fallback to original key
+  // missing translation, will fallback to the original key
   "no-translation": null,
 
   // static text
@@ -151,7 +156,7 @@ Example resource:
   // dynamic text
   "%s是最好吃的": "pizza is better than %s"
 
-  // resource can be organized by module, it can then used by corresponding instance,
+  // the resource can be organized by module, it can then used by the corresponding instance,
   // created from `getA18n('my-project-namespace', 'my.module.x')`
   "my.module.x": {
     "你好": "Hello from my module",
@@ -167,20 +172,20 @@ This method should be called BEFORE every `a18n` translation functions are calle
 
 > this method is usually auto added with `a18n wrap` command, with `--namespace` option
 
-Get an a18n instance with specified namespace and modules.
+Get an a18n instance with the specified namespace and modules.
 
-You can use unique `namespace` to get isolated resources and locales, even if different parts of system are reusing a18n as common dependency (which is common in large projects).
+You can use a unique `namespace` to get isolated resources and locales, even if different parts of system are reusing a18n as common dependency (which is common in large projects).
 
-If `moduleName` is provided, this a18n instance will select `resource[moduleName]` as resource, this serves as a way to split resources into different modules.
+If `moduleName` is provided, this a18n instance will select `resource[moduleName]` as the resource. This serves as a way to split resources into different modules.
 
 See [Q & A](#2-when-do-i-need-to-specify-a-namespace) for more background.
 
 #### a18n.DEBUG_setRepeat(repeatCount, separator?)
 
-Repeat translated string/array multiple times, so that UI issues like text overflow can be spotted easily.
+Repeats the translated string/array multiple times, so that UI issues like text overflow can be easily spotted.
 
-- count: how many times to repeat the text
-- separator: separator between repeated text, default to ` ` (a space)
+- `repeatCount`: how many times to repeat the text
+- `separator`: separator between repeated text, default to ` ` (a space)
 
 ### CLI
 
@@ -193,17 +198,18 @@ See: `npx a18n --help`
 This can be illustrated with this example:
 
 ```js
-const s = a18n('apple') // we don't have locale resources for the moment
-// so `s` is bound to 'apple', not '苹果' as we intended.
+const s = a18n('apple') // We don't have locale resources yet, so `s` is bound to 'apple', not '苹果' as we intended.
 
-a18n.addLocaleResource('zh-CN', { apple: '苹果' }) // ...too late
-a18n.setLocale('zh-CN') // ...too late
+a18n.addLocaleResource('zh-CN', { apple: '苹果' }) // ...Too late
+a18n.setLocale('zh-CN') // ...Too late
 
 console.log(s) // 'apple'
 ```
 
+It is important to load translation resources and specify a locale before all other code is run because if you don't, the a18n function may not have access to the correct translation resources and locale, and will default to the original text.
+
 ### 2. When do I need to specify a namespace?
 
-If there are multiple dependencies in the project that further depends on a18n, some bundling tools (webpack) may generate a bundle where they all share a single copy of the a18n code and a single copy of the a18n instance at runtime. Since a18n is a singleton, this may cause unintended locale resources sharing/conflict.
+If there are multiple dependencies in the project that further depend on `a18n`, some bundling tools (such as webpack) may generate a bundle where they all share a single copy of the `a18n` code and a single copy of the `a18n` instance at runtime. Since `a18n` is a singleton, this may cause unintended locale resource sharing/conflict.
 
-To solve this problem, different dependencies can get its own a18n instances, differentiated by namespace, using `getA18n(namespace)`, and continue to have isolated resources and language configurations. It is also possible to acquire the same a18n instance by specifying same namespaces in order to share language and translation resources.
+To solve this problem, different dependencies can get their own a18n instances, differentiated by namespace, using `getA18n(namespace)`, and continue to have isolated resources and language configurations. It is also possible to acquire the same a18n instance by specifying the same namespace in order to share language and translation resources.

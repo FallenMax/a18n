@@ -49,37 +49,37 @@ const handleWrap = async () => {
     console.info(
       `a18n wrap <path> --write [<options>]
 
-DESCRIPTION
-  Modify code files from given <path>, wrap 'string_literal' and \`template\${string}\` with default translate function 'a18n("string_literal")' or 'a18n\`template\${string}\`'
-  Stdin is read as file list if it is piped to a18n and no <path> is given.
+DESCRIPTION:
+  Modifies code files at the given <path>, wrapping string literals and tagged template literals with the default translate function 'a18n("string_literal")' or 'a18n\`template\${string}\`.
+  If no <path> is given, stdin is read as a list of files.
 
 OPTIONS:
   '<path>':
-    file/dir/glob, code files to be processed. multiple entries are seperated by comma
+    file/dir/glob of code files to be processed. Multiple entries are separated by commas.
   '--write':
-    write files in place. if not provided, a18n will perform a dry run and print files to be modified
+    Writes files in place. If not provided, a18n will perform a dry run and print the files to be modified.
   '--namespace=':
-    a name that uniquely identifies current project, this helps avoid resource conflicting with other dependencies that also uses "a18n"
+    A name that uniquely identifies the current project, which helps avoid resource conflicts with other dependencies that also use "a18n".
   '--module-name=':
-    generate module name using provided template, if no default module name is provided. requires '--namespace' to be provided
-    for example, running "a18n wrap a/b/c/foo.ts --namespace=my-ns --module-name=filePath" will insert: 
+    Generates a module name using the provided template. If no default module name is provided, '--namespace' must be provided.
+    For example, running "a18n wrap a/b/c/foo.ts --namespace=my-ns --module-name=filePath" will insert: 
       "const a18n = getA18n('my-ns', 'a/b/c/foo')"
-    and this a18n instance will use 'resource['a/b/c/foo']' instead of 'resource' when translating in the runtime. 
-    available template values are:
+    The resulting a18n instance will use 'resource['a/b/c/foo']' instead of 'resource' when translating at runtime. 
+    Available template values are:
       'fileDirAndName': "a/b/c/foo.ts" will be "c/foo"
       'filePath': "a/b/c/foo.ts" will be "a/b/c/foo"
       'fileName': "a/b/c/foo.ts" will be "foo"
   '--module-name-update':
-    when using '--module-name', update existed module name to new name, default is true.
+    When using '--module-name', updates the existing module name to the new name. Default is true.
   '--exclude=':
-    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+    Directories and files to be ignored. Multiple glob rules are separated by a comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
   '--silent':
-    do not print files being processed (this will be ignored when '--write' is not present)
+    Do not print files being processed (this will be ignored when '--write' is not present)
 
 NOTE:
-  only .js, .ts, .jsx, .tsx files are supported.
-  .gitignore is respected by default
-  use "// @a18n-ignore" to ignore next line, use "// @a18n-ignore-file" to ignore entire file
+  Only .js, .ts, .jsx, .tsx files are supported.
+  .gitignore is respected by default.
+  Use "// @a18n-ignore" to ignore the next line, and "// @a18n-ignore-file" to ignore the entire file.
 `,
     )
     return
@@ -122,27 +122,28 @@ const handleExtract = async () => {
       `a18n extract <path> <localeRoot> [<options>]
 
 DESCRIPTION
-  Parse code files from given <path>, extract texts to be translated (which are wrapped in 'a18n()/a18n\`\`') to <localeRoot> directory,
-  Existed translation will be reused, unused keys will be dropped by default.
-  Stdin is read as file list if it is piped to a18n and no <path> is given.
+  Extract texts from code files in the given <path>, and write them to the <localeRoot> directory.
+  Texts to be translated must be wrapped in 'a18n()' or 'a18n\`\`.
+  If there are existing translations, they will be reused. By default, unused keys will be removed.
+  If no <path> is given, stdin is read as a list of files.
 
 OPTIONS:
   '<path>':
-    file/dir/glob, code files to be processed. multiple entries are seperated by comma
+    file/dir/glob of code files to be processed. Multiple entries are separated by commas.
   '<localeRoot'>:
-    directory to store locale resource files
+    Directory to store locale resource files
   '--locales=':
-    languages to be exported, separated by comma. example: 'da,de-AT,de-CH,de-DE'
+    Languages to export, separated by a comma. Example: 'da,de-AT,de-CH,de-DE'
   '--keep-unused':
-    keep unused texts/translations even if they are not found in code being extracted.
+    Keep unused texts/translations, even if they are not found in the code being extracted.
   '--reuse-from=':
-    where to look for translation from existed resource (in locale resource folder):
-      'all': (default) will reuse translation from same module, then root, then other modules
-      'same-module-then-root': will reuse translation from same module, if not found, then from root
-      'same-module': will only reuse translation from same module
-      'no': do not reuse translation, which means all values will be "null" after extraction
+    Specify where to look for existing translations (in the locale resource folder):
+      'all': (default) reuse translations from the same module, then from the root, then from other modules
+      'same-module-then-root': reuse translations from the same module, if not found, then from the root
+      'same-module': only reuse translations from the same module
+      'no': do not reuse translations, meaning all values will be "null" after extraction
   '--silent':
-    do not print files being processed
+    Do not print the names of the files being processed.
 `,
     )
     return
@@ -176,23 +177,23 @@ const handlePurge = async () => {
     console.info(
       `a18n purge <path> --write [<options>]
 
-DESCRIPTION
-  Modify code files from given <path>, remove 'a18n()/a18n\`\`' translation calls and import statements
-  Stdin is read as file list if it is piped to a18n and no <path> is given.
+DESCRIPTION:
+  Modify code files in the specified <path>, removing 'a18n()/a18n\`\`' translation calls and import statements.
+  If no <path> is given, stdin is read as a list of files.
 
 OPTIONS:
   '<path>':
-    file/dir/glob, code files to be processed. multiple entries are separated by comma
+    File/dir/glob of code files to be processed. Multiple entries are separated by commas.
   '--write':
-    write files in place. if not provided, a18n will perform a dry run and print files to be modified
+    Write changes to the file in place. If not provided, a18n will perform a dry run and print the files that would be modified.
   '--exclude=':
-    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+    Directories and files to be ignored, specified as multiple glob rules separated by commas, e.g.: './dir/.spec.js,./anotherdir//*. *'
   '--silent':
-    do not print files being processed (this will be ignored when '--write' is not present)
+    Do not print the names of files being processed (this option will be ignored if '--write' is not present).
 
 NOTE:
-  Only .js, .ts, .jsx, .tsx files are supported.
-  .gitignore is respected by default
+  Only .js, .ts, .jsx, and .tsx files are supported.
+  .gitignore is respected by default.
 `,
     )
     return
@@ -225,33 +226,33 @@ const handleCheck = async () => {
       `a18n check <path> <localeRoot> [<options>]
 
 DESCRIPTION
-  Analyze code files from given <path> and translated texts at <localeRoot>, check for untranslated texts.
-  If any, print and exit with error code.
+  Analyze code files from given <path> and translated texts at <localeRoot>, check for untranslated texts. If any, print and exit with error code. 
   Stdin is read as file list if it is piped to a18n and no <path> is given.
 
-  These types of "missing translation" will be checked:
-  - texts in code that are not wrapped as expected
-  - texts in code that are not extracted to locale resources folder
-  - texts in locale resources with no translation (keys with value = null),
-  - any incorrect translation calls and syntax errors found in the process
+  The following "missing translations" will be checked:
+
+  - Texts in code that are not wrapped as expected
+  - Texts in code that are not extracted to the localeResources folder
+  - Texts in localeResources with no translation (keys with value null)
+  - Any incorrect translation calls and syntax errors found in the process
 
 OPTIONS:
   '<path>':
-    file/dir/glob, code files to be processed. multiple entries are separated by comma
-  '<localeRoot'>:
-    directory to store locale resource files
+    File/dir/glob of code files to be processed. Multiple entries are separated by commas.
+  '<localeRoot>':
+    The directory containing the localeResources files.
   '--locales=<localeRoot>':
-    specify locales to check, by default all locale files under <localeRoot> are checked
+    Specify the locales to check. By default, all locale files under <localeRoot> are checked.
   '--json':
-    print result in json format
+    Print the result in JSON format.
   '--skip-wrap':
-    do not check for unwrapped texts
+    Do not check for unwrapped texts.
   '--skip-extract':
-    do not check for unextracted texts
+    Do not check for unextracted texts.
   '--skip-resource':
-    do not check for missing translation
+    Do not check for missing translations.
   '--exclude=':
-    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+    Directories and files to be ignored, specified using glob patterns separated by a comma (e.g. './dir/**.spec.js,./anotherdir/**/*.*').
 `,
     )
     return
@@ -301,26 +302,27 @@ const handleReplace = async () => {
       `a18n replace <path> <localeRoot> <locale> --write [<options>]
 
 DESCRIPTION
-  Modify code files from given <path>, replace texts wrapped in 'a18n()/a18n\`\`' calls with translated texts, using target <locale> and resources in <localeRoot>.
+  Modify code files from the given <path>, replacing texts wrapped in 'a18n()/a18n\`\`' calls with translated texts using the target <locale> and resources in <localeRoot>.
   Stdin is read as file list if it is piped to a18n and no <path> is given.
 
 OPTIONS:
   '<path>':
-    file/dir/glob, code files to be processed. multiple entries are seperated by comma
+    file/dir/glob, code files to be processed. Multiple entries are separated by a comma.
   '<localeRoot'>:
-    directory to store locale resource files
+    Directory where the locale resource files are stored
   '<locale>':
-    target language to be translated to, example: 'en-US'. corresponding resources file (en-US.json) is expected to exist under <localeRoot>
+    Target language to be translated to. Example: 'en-US'. The corresponding resource file (en-US.json) is expected to exist under <localeRoot>.
   '--write':
-    write files in place. if not provided, a18n will perform a dry run and print files to be modified
+    Write the files in place. If not provided, a18n will perform a dry run and print the files to be modified.
   '--exclude=':
-    directories and files to be ignored, multiple glob rules are separated by comma, e.g.: './dir/**.spec.js,./anotherdir/**/*. *'
+    Directories and files to be ignored, specified using multiple glob rules separated by a comma. Example: './dir/.spec.js,./anotherdir//*. *'
   '--silent':
-    do not print files being processed (this will be ignored when '--write' is not present)
+    Do not print the files being processed (this will be ignored when '--write' is not present).
 
 NOTE:
-  only .js, .ts, .jsx, .tsx files are supported.
-  .gitignore is respected by default
+  Only .js, .ts, .jsx, and .tsx files are supported.
+  .gitignore is respected by default.
+  To remove a18n calls, use the a18n purge command.
 `,
     )
     return
