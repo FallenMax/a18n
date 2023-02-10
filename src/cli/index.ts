@@ -59,9 +59,10 @@ OPTIONS:
   '--write':
     Writes files in place. If not provided, a18n will perform a dry run and print the files to be modified.
   '--text=':
-    Which texts should be wrapped:
-      'cjk': CJK texts (Chinese, Japanese, Korean)
-      'prefix': (experimental) texts starts with special marker "@@", e.g. "@@Hello world"
+    Which texts should be wrapped, default is 'cjk':
+      'cjk': CJK texts (Chinese, Japanese, Korean), e.g. "你好"
+      'capitalized': English words or sentences start with capital letters, e.g. "Apple", "Hello World". Please note that this option is not perfect, you still need to manually check the result.
+      'prefix': texts starts with special marker "@@", e.g. "@@Hello world", the marker will be removed after wrap
   '--namespace=':
     A name that uniquely identifies the current project, which helps avoid resource conflicts with other dependencies that also use "a18n".
   '--module-name=':

@@ -11,7 +11,6 @@ import {
   LIB_IGNORE_LINE,
   LIB_METHOD_X_IDENTIFIER,
   LIB_MODULE,
-  TEXT_PREFIX,
   TEXT_PREFIX_REGEX,
 } from '../constants'
 import { toDynamicText, toStaticText } from '../extract/tsx-extractor'
@@ -70,13 +69,14 @@ const removeImportRequireFactory = (ast: any, lines: string[]) => {
 }
 
 const cjkRegex = CJK().toRegExp()
-const removePrefix = (str: string) => str.replace(TEXT_PREFIX_REGEX, '')
+
 export const needTranslate = (
   str: string,
-  mode: WrapOptions['text'],
+  mode: WrapOptions['text'] = 'cjk',
 ): boolean => {
-  if (!mode || mode === 'cjk') return cjkRegex.test(str)
-  if (mode === 'prefix') return str.startsWith(TEXT_PREFIX)
+  if (mode === 'cjk') return cjkRegex.test(str)
+  if (mode === 'prefix') return TEXT_PREFIX_REGEX.test(str)
+  if (mode === 'capitalized') return /\b[A-Z][a-z]*\b/.test(str)
   return assertNever(mode)
 }
 
@@ -98,7 +98,7 @@ export interface WrapOptions {
   moduleName?: ModuleNameTemplate
   moduleNameUpdate?: boolean
   checkOnly?: boolean
-  text?: 'cjk' | 'prefix'
+  text?: 'cjk' | 'prefix' | 'capitalized'
 }
 
 export const wrapCode = (
@@ -123,6 +123,13 @@ export const wrapCode = (
       output: code,
       sourceTexts: [],
     }
+  }
+
+  const removePrefix = (str: string) => {
+    if (text === 'prefix') {
+      return str.replace(TEXT_PREFIX_REGEX, '')
+    }
+    return str
   }
 
   const ast = parse(code, filePath)

@@ -39,6 +39,24 @@ describe('wrap', () => {
       expect(n('@')).toBe(false)
       expect(n('@@')).toBe(true)
       expect(n('@@text')).toBe(true)
+      expect(n(' @@text')).toBe(true)
+      expect(
+        n(` 
+      @@text`),
+      ).toBe(true)
+      expect(n('我')).toBe(false)
+    })
+    test('when text=capitalized, it should return true for text starts with capitalized letter', () => {
+      const n = (str: string) => needTranslate(str, 'capitalized')
+      expect(n('')).toBe(false)
+      expect(n('a')).toBe(false)
+      expect(n('A')).toBe(true)
+      expect(n('A text')).toBe(true)
+      expect(n(' a text')).toBe(false)
+      expect(
+        n(` 
+      A text`),
+      ).toBe(true)
       expect(n('我')).toBe(false)
     })
   })
@@ -70,8 +88,9 @@ describe('wrap', () => {
       const staticText = '@@Hello @@world'
       const dynamicText = \`@@Hello \${'@@world'}\`
       const singleJsx = <div>@@Hello world</div>
-      const multipleJsx = <div>@@Hello <strong>@@world</strong>!</div>
-      
+      const multipleJsx = <div>
+        @@Hello <strong>@@world</strong>!
+      </div>
   `
       const expected = `
       import a18n from "a18n";
@@ -98,6 +117,44 @@ describe('wrap', () => {
           namespace: undefined,
           filePath: 'FAKE/PATH.tsx',
           text: 'prefix',
+        }),
+        expected,
+      )
+    })
+
+    test('when text=capitalized, wrap capitalized texts', () => {
+      const source = `
+      const staticText = 'Hello World'
+      const dynamicText = \`Hello \${'world'}\`
+      const singleJsx = <div>Hello world</div>
+      const multipleJsx = <div>
+        Hello <strong>world</strong>!
+      </div>
+  `
+      const expected = `
+      import a18n from "a18n";
+
+      const staticText = a18n('Hello World');
+      const dynamicText = a18n\`Hello \${'world'}\`;
+      const singleJsx = <div>{a18n('Hello world')}</div>;
+      const multipleJsx = (
+      <div>{a18n.x\`Hello\${(<strong>world</strong>)}!\`}</div>
+    );
+    `
+      assertEqualFormatted(
+        wrapCode(source, {
+          namespace: undefined,
+          filePath: 'FAKE/PATH.tsx',
+          text: 'capitalized',
+        }),
+        expected,
+      )
+      // ensure we don't double wrap a18n()
+      assertEqualFormatted(
+        wrapCode(expected, {
+          namespace: undefined,
+          filePath: 'FAKE/PATH.tsx',
+          text: 'capitalized',
         }),
         expected,
       )

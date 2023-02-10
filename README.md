@@ -11,7 +11,7 @@ a18n is an automated internationalization solution for JavaScript/TypeScript/Rea
 ## Features
 
 - Command Line Tool
-  - **Wrap** texts with translation calls (`a18n wrap`)
+  - **Wrap** texts with translation calls (`a18n wrap`). (English and CJK texts are currently supported)
   - **Extract** texts from translation calls (`a18n extract`)
   - **Check** for untranslated text in code and resources (`a18n check`)
   - **Replace** untranslated text in code with translated ones (`a18n replace`)
@@ -37,13 +37,14 @@ Install as a project dependency (not a devDependency, as `a18n` provides both a 
 npm install --save a18n
 ```
 
-Scan and modify code files (.js, .ts, .jsx, .tsx) in the src directory. This will wrap CJK text strings with translation calls:
+Scan and modify code files (.js, .ts, .jsx, .tsx) in the src directory. This will wrap plain text strings with translation calls:
 
 - `--namespace` serves to avoid conflicts with the same a18n instance from other dependencies
 - `--module-name` automatically provides context for each text and helps distinguish texts from different modules
+- `--text=cjk` wraps CJK texts. You can also use `--text=capitalized` to wrap English words or sentences
 
 ```sh
-npx a18n wrap src --write --namespace="my.unique.project.id" --module-name="fileDirAndName"
+npx a18n wrap src --write --namespace="my.unique.project.id" --module-name="fileDirAndName" --text="cjk"
 ```
 
 Manually check for unintended modifications and fix them. You can:

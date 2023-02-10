@@ -8,6 +8,6 @@ export const LIB_FACTORY_IDENTIFIER = 'getA18n'
 export const LIB_IGNORE_LINE = '@a18n-ignore'
 export const LIB_IGNORE_FILE = '@a18n-ignore-file'
 export const TEXT_PREFIX = '@@'
-export const TEXT_PREFIX_REGEX = /^@@/
+export const TEXT_PREFIX_REGEX = /^\s*@@/
 
 export const DEFAULT_LOCALES = ['en-US']
