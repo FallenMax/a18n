@@ -9,50 +9,99 @@ const format = (str: string) => {
 }
 const wrapCode = (...args: Parameters<typeof wrap>) => wrap(...args).output
 
-const assertEqualFormated = (a: string, b: string) => {
+const assertEqualFormatted = (a: string, b: string) => {
   expect(format(a)).toBe(format(b))
 }
 
 describe('wrap', () => {
-  test('needTranslate() should return true for non-ascii words and sentences', () => {
-    const n = needTranslate
-    expect(n('')).toBe(false)
-    expect(n(' ')).toBe(false)
-    expect(n('\t')).toBe(false)
-    expect(n('      ')).toBe(false) // nbsp
-    expect(n(' \n ')).toBe(false)
-    expect(n('some')).toBe(false)
-    expect(n('some thing')).toBe(false)
-    expect(n('+-*/!@#$%^&*()_+|-=`~[]{};\':",./<>?')).toBe(false)
-    expect(n('abc')).toBe(false)
-    expect(n(';:`')).toBe(false)
-    expect(n('☺')).toBe(false)
-    expect(n('⏰')).toBe(false)
-    expect(n('我')).toBe(true)
-    expect(n('。')).toBe(true)
-    expect(n('⌘')).toBe(false)
+  describe('needTranslate', () => {
+    test('when text=cjk, it should return true for non-ascii words and sentences', () => {
+      const n = (str: string) => needTranslate(str, 'cjk')
+      expect(n('')).toBe(false)
+      expect(n(' ')).toBe(false)
+      expect(n('\t')).toBe(false)
+      expect(n('      ')).toBe(false) // nbsp
+      expect(n(' \n ')).toBe(false)
+      expect(n('some')).toBe(false)
+      expect(n('some thing')).toBe(false)
+      expect(n('+-*/!@#$%^&*()_+|-=`~[]{};\':",./<>?')).toBe(false)
+      expect(n('abc')).toBe(false)
+      expect(n(';:`')).toBe(false)
+      expect(n('☺')).toBe(false)
+      expect(n('⏰')).toBe(false)
+      expect(n('我')).toBe(true)
+      expect(n('。')).toBe(true)
+      expect(n('⌘')).toBe(false)
+    })
+    test('when text=prefix, it should return true for text starts with PREFIX', () => {
+      const n = (str: string) => needTranslate(str, 'prefix')
+      expect(n('')).toBe(false)
+      expect(n('@')).toBe(false)
+      expect(n('@@')).toBe(true)
+      expect(n('@@text')).toBe(true)
+      expect(n('我')).toBe(false)
+    })
   })
-  test('add a18n() calls ', () => {
-    const sourcePath = resolve(
-      __dirname,
-      '../../src/cli/__test__/wrap-input.mock.tsx',
-    )
-    const source = readFileSync(sourcePath, { encoding: 'utf-8' })
-    const expectedPath = resolve(
-      __dirname,
-      '../../src/cli/__test__/wrap-output.mock.tsx',
-    )
-    const expected = readFileSync(expectedPath, { encoding: 'utf-8' })
+  describe('add a18n() calls ', () => {
+    test('when text=cjk, wrap cjk texts', () => {
+      const sourcePath = resolve(
+        __dirname,
+        '../../src/cli/__test__/wrap-input.mock.tsx',
+      )
+      const source = readFileSync(sourcePath, { encoding: 'utf-8' })
+      const expectedPath = resolve(
+        __dirname,
+        '../../src/cli/__test__/wrap-output.mock.tsx',
+      )
+      const expected = readFileSync(expectedPath, { encoding: 'utf-8' })
 
-    assertEqualFormated(
-      wrapCode(source, { namespace: undefined, filePath: sourcePath }),
-      expected,
-    )
-    // ensure we don't double wrap a18n()
-    assertEqualFormated(
-      wrapCode(expected, { namespace: undefined, filePath: sourcePath }),
-      expected,
-    )
+      assertEqualFormatted(
+        wrapCode(source, { namespace: undefined, filePath: sourcePath }),
+        expected,
+      )
+      // ensure we don't double wrap a18n()
+      assertEqualFormatted(
+        wrapCode(expected, { namespace: undefined, filePath: sourcePath }),
+        expected,
+      )
+    })
+    test('when text=prefix, wrap texts with special prefix', () => {
+      const source = `
+      const staticText = '@@Hello @@world'
+      const dynamicText = \`@@Hello \${'@@world'}\`
+      const singleJsx = <div>@@Hello world</div>
+      const multipleJsx = <div>@@Hello <strong>@@world</strong>!</div>
+      
+  `
+      const expected = `
+      import a18n from "a18n";
+
+      const staticText = a18n("Hello @@world");
+      const dynamicText = a18n\`Hello \${a18n("world")}\`;
+      const singleJsx = <div>{a18n("Hello world")}</div>;
+      const multipleJsx = (
+      <div>{a18n.x\`Hello\${(<strong>{a18n("world")}</strong>)}!\`}</div>
+    );
+    `
+
+      assertEqualFormatted(
+        wrapCode(source, {
+          namespace: undefined,
+          filePath: 'FAKE/PATH.tsx',
+          text: 'prefix',
+        }),
+        expected,
+      )
+      // ensure we don't double wrap a18n()
+      assertEqualFormatted(
+        wrapCode(expected, {
+          namespace: undefined,
+          filePath: 'FAKE/PATH.tsx',
+          text: 'prefix',
+        }),
+        expected,
+      )
+    })
   })
 
   describe('add a18n.x() calls for jsx', () => {
@@ -60,12 +109,12 @@ describe('wrap', () => {
       const source = `const a = <div>你好，<strong>{userName}</strong>!</div>`
       const expected = `import a18n from "a18n"; const a = <div>{a18n.x\`你好，\${(<strong>{userName}</strong>)}!\`}</div>`
 
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(source, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
         expected,
       )
       // ensure we don't double wrap a18n()
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(expected, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
         expected,
       )
@@ -80,12 +129,12 @@ describe('wrap', () => {
         <strong>{userName}</strong>
       </div>`
 
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(source, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
         expected,
       )
       // ensure we don't double wrap a18n()
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(expected, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
         expected,
       )
@@ -149,13 +198,13 @@ describe('wrap', () => {
   const s = '中文'
   `
 
-    assertEqualFormated(
+    assertEqualFormatted(
       wrapCode(source, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
       expected,
     )
 
     // ensure we don't double wrap a18n()
-    assertEqualFormated(
+    assertEqualFormatted(
       wrapCode(expected, { namespace: undefined, filePath: 'FAKE/PATH.tsx' }),
       expected,
     )
@@ -163,7 +212,7 @@ describe('wrap', () => {
 
   describe('add import statement: without namespace', () => {
     test(`don't add if not needed`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = 'english'`, {
           namespace: undefined,
           filePath: 'FAKE/PATH.tsx',
@@ -173,7 +222,7 @@ describe('wrap', () => {
     })
 
     test('add import statement', () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = '中文'`, {
           namespace: undefined,
           filePath: 'FAKE/PATH.tsx',
@@ -184,7 +233,7 @@ const s = a18n('中文')`,
     })
 
     test(`don't add import statement if existed`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import a18n from 'a18n'
 const s = '中文'`,
@@ -195,7 +244,7 @@ const s = a18n('中文')`,
       )
     })
     test(`don't unnecessarily change existed import statement`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import * as React from 'react'
 import a18n from 'a18n'
@@ -209,7 +258,7 @@ const s = a18n('中文')`,
     })
 
     test(`add require() if code base is using require()`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `const React = require('react')
 const s = '中文'`,
@@ -224,7 +273,7 @@ const s = a18n('中文')`,
 
   describe('add import statement: with namespace', () => {
     test("don't need import/require", () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = 'english'`, {
           namespace: 'my-namespace',
           filePath: 'FAKE/PATH.tsx',
@@ -234,7 +283,7 @@ const s = a18n('中文')`,
     })
 
     test(`add import`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           filePath: 'FAKE/PATH.tsx',
@@ -246,7 +295,7 @@ const s = a18n('中文')`,
     })
 
     test(`replace import: replace non-namespaced a18n`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import a18n from 'a18n'
 const s = '中文'`,
@@ -259,7 +308,7 @@ const s = a18n('中文')`,
     })
 
     test(`replace import: replace namespaced a18n`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('your-namespace')
@@ -273,7 +322,7 @@ const s = a18n('中文')`,
     })
 
     test(`retain import: don't make unnecessary change`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import * as React from 'react'
 import { getA18n } from 'a18n'
@@ -289,7 +338,7 @@ const s = a18n('中文')`,
     })
 
     test(`add require`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `const React = require('react')
 const s = '中文'`,
@@ -303,7 +352,7 @@ const s = a18n('中文')`,
     })
 
     test(`replace require: replace non-namespaced a18n`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `const a18n = require('a18n')
 const s = '中文'`,
@@ -316,7 +365,7 @@ const s = a18n('中文')`,
     })
 
     test(`replace require: replace namespaced a18n`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `const { getA18n } = require('a18n')
 const a18n = getA18n('your-namespace')
@@ -331,7 +380,7 @@ const s = a18n('中文')`,
   })
   describe('module', () => {
     test(`add moduleName from filePath`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'filePath',
@@ -345,7 +394,7 @@ const s = a18n('中文')`,
     })
 
     test(`add moduleName from fileDirAndName`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'fileDirAndName',
@@ -357,7 +406,7 @@ const a18n = getA18n('my-namespace', 'c/foo')
 const s = a18n('中文')`,
       )
 
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'fileDirAndName',
@@ -371,7 +420,7 @@ const s = a18n('中文')`,
     })
 
     test(`add moduleName from fileName (first-time)`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(`const s = '中文'`, {
           namespace: 'my-namespace',
           moduleName: 'fileName',
@@ -385,7 +434,7 @@ const s = a18n('中文')`,
     })
 
     test(`add moduleName from fileName (already have namespace)`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace')
@@ -404,7 +453,7 @@ const s = a18n('中文')`,
     })
 
     test(`keep current moduleName (--module-name-update=false)`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'bar')
@@ -424,7 +473,7 @@ const s = a18n('中文')`,
     })
 
     test(`update current moduleName (--module-name-update=true)`, () => {
-      assertEqualFormated(
+      assertEqualFormatted(
         wrapCode(
           `import { getA18n } from 'a18n'
 const a18n = getA18n('my-namespace', 'bar')

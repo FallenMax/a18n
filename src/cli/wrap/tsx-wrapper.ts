@@ -11,6 +11,8 @@ import {
   LIB_IGNORE_LINE,
   LIB_METHOD_X_IDENTIFIER,
   LIB_MODULE,
+  TEXT_PREFIX,
+  TEXT_PREFIX_REGEX,
 } from '../constants'
 import { toDynamicText, toStaticText } from '../extract/tsx-extractor'
 import { extractModuleName } from '../module_name'
@@ -68,8 +70,14 @@ const removeImportRequireFactory = (ast: any, lines: string[]) => {
 }
 
 const cjkRegex = CJK().toRegExp()
-export const needTranslate = (str: string): boolean => {
-  return cjkRegex.test(str)
+const removePrefix = (str: string) => str.replace(TEXT_PREFIX_REGEX, '')
+export const needTranslate = (
+  str: string,
+  mode: WrapOptions['text'],
+): boolean => {
+  if (!mode || mode === 'cjk') return cjkRegex.test(str)
+  if (mode === 'prefix') return str.startsWith(TEXT_PREFIX)
+  return assertNever(mode)
 }
 
 const fromStringLiteral = (
@@ -90,6 +98,7 @@ export interface WrapOptions {
   moduleName?: ModuleNameTemplate
   moduleNameUpdate?: boolean
   checkOnly?: boolean
+  text?: 'cjk' | 'prefix'
 }
 
 export const wrapCode = (
@@ -101,6 +110,7 @@ export const wrapCode = (
     namespace,
     checkOnly = false,
     moduleNameUpdate = true,
+    text = 'cjk',
   }: WrapOptions & {
     filePath: string
   },
@@ -193,7 +203,7 @@ export const wrapCode = (
         switch (node.type) {
           // '中文' => a18n('中文')
           case 'StringLiteral': {
-            if (needTranslate(node.value)) {
+            if (needTranslate(node.value, text)) {
               // ignore when it's already: a18n(’中文’)
               const parent = path.parent
               if (
@@ -213,7 +223,7 @@ export const wrapCode = (
                   path.replaceWith(
                     t.jsxExpressionContainer(
                       t.callExpression(t.identifier(LIB_IDENTIFIER), [
-                        t.stringLiteral(node.value),
+                        t.stringLiteral(removePrefix(node.value)),
                       ]),
                     ),
                   )
@@ -229,7 +239,7 @@ export const wrapCode = (
                 } else {
                   path.replaceWith(
                     t.callExpression(t.identifier(LIB_IDENTIFIER), [
-                      t.stringLiteral(node.value),
+                      t.stringLiteral(removePrefix(node.value)),
                     ]),
                   )
                 }
@@ -243,7 +253,10 @@ export const wrapCode = (
           case 'TemplateLiteral': {
             const { quasis } = node
             if (
-              quasis.some((q) => needTranslate(q.value.cooked ?? q.value.raw))
+              // TODO for text=prefix, we should only check/replace for the first part of the template literal
+              quasis.some((q) =>
+                needTranslate(q.value.cooked ?? q.value.raw, text),
+              )
             ) {
               const parent = path.parent
               if (parent.type === 'TaggedTemplateExpression') {
@@ -271,10 +284,18 @@ export const wrapCode = (
                     quasis.map((q) => q.value.cooked ?? q.value.raw),
                   )
                 } else {
+                  // TODO for text=prefix, we should only check/replace for the first part of the template literal
                   path.replaceWith(
                     t.taggedTemplateExpression(
                       t.identifier(LIB_IDENTIFIER),
-                      node,
+                      t.templateLiteral(
+                        node.quasis.map((q) => {
+                          return t.templateElement({
+                            raw: removePrefix(q.value.raw),
+                          })
+                        }),
+                        node.expressions,
+                      ),
                     ),
                   )
                 }
@@ -294,7 +315,7 @@ export const wrapCode = (
           // =>
           // <div>{a18n.x`你好，${(<strong>{userName}</strong>)}!!!`}</div>
           case 'JSXText': {
-            if (needTranslate(node.value)) {
+            if (needTranslate(node.value, text)) {
               const parent = path.parent as t.JSXElement | t.JSXFragment
               const parentPath = path.parentPath as NodePath<
                 t.JSXElement | t.JSXFragment
@@ -312,7 +333,7 @@ export const wrapCode = (
                 parent.children.filter(hasText).length > 1
 
               if (shouldWrapMultiple) {
-                // avoid parent node wrapped multiple times from its jsxtext children,
+                // avoid parent node get wrapped multiple times from its jsxtext children,
                 // only let the first qualified text node trigger wrapping
                 const theOne = parent.children.find(hasText)
                 if (theOne && theOne.start !== node.start) {
@@ -339,7 +360,8 @@ export const wrapCode = (
                       if (lastIsText) {
                         const last = quasis[quasis.length - 1]
                         last.value.cooked =
-                          (last.value.cooked ?? '') + child.value.trim()
+                          (last.value.cooked ?? '') +
+                          removePrefix(child.value).trim()
                         last.value.raw = (last.value.cooked ?? '').replace(
                           /\\|`|\${/g,
                           '\\$&',
@@ -350,8 +372,10 @@ export const wrapCode = (
                             raw:
                               // Add a backslash before every ‘`’, ‘\’ and ‘${’.
                               // https://github.com/babel/babel/issues/9242#issuecomment-532529613
-                              child.value.trim().replace(/\\|`|\${/g, '\\$&'),
-                            cooked: child.value.trim(),
+                              removePrefix(child.value)
+                                .trim()
+                                .replace(/\\|`|\${/g, '\\$&'),
+                            cooked: removePrefix(child.value).trim(),
                           }),
                         )
                       }
