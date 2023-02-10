@@ -58,6 +58,10 @@ OPTIONS:
     file/dir/glob of code files to be processed. Multiple entries are separated by commas.
   '--write':
     Writes files in place. If not provided, a18n will perform a dry run and print the files to be modified.
+  '--text=':
+    Which texts should be wrapped:
+      'cjk': CJK texts (Chinese, Japanese, Korean)
+      'prefix': (experimental) texts starts with special marker "@@", e.g. "@@Hello world"
   '--namespace=':
     A name that uniquely identifies the current project, which helps avoid resource conflicts with other dependencies that also use "a18n".
   '--module-name=':
@@ -100,7 +104,7 @@ NOTE:
     write: args.write,
     exclude: args.exclude,
     silent: args.silent,
-
+    text: args.text ?? 'cjk',
     basePath: process.cwd(),
     namespace: args.namespace,
     moduleName: args.moduleName,
