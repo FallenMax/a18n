@@ -1,5 +1,6 @@
 import assert from 'assert'
 import { readFileSync } from 'fs'
+import mkdirp from 'mkdirp'
 import { resolve } from 'path'
 import parseArgs from 'yargs-parser'
 import { check } from './check'
@@ -155,10 +156,7 @@ OPTIONS:
   }
 
   const absoluteLocaleRoot = resolve(process.cwd(), localeRoot)
-  assert(
-    isDirectory(absoluteLocaleRoot),
-    `locale root is not a directory: ${localeRoot}`,
-  )
+  mkdirp.sync(absoluteLocaleRoot)
 
   await extract(files, {
     localeRoot: absoluteLocaleRoot,
