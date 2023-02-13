@@ -211,14 +211,25 @@ export const wrapCode = (
           // '中文' => a18n('中文')
           case 'StringLiteral': {
             if (needTranslate(node.value, text)) {
-              // ignore when it's already: a18n(’中文’)
               const parent = path.parent
+
+              // ignore: a18n(’中文’)
               if (
-                parent.type === 'CallExpression' &&
+                t.isCallExpression(parent) &&
                 t.isIdentifier(parent.callee) &&
                 parent.callee.name === LIB_IDENTIFIER
               ) {
                 markLibUsed()
+                break
+              }
+
+              // ignore: import ... from './中文'
+              if (t.isImportDeclaration(parent)) {
+                break
+              }
+
+              // ignore: import('./中文')
+              if (t.isCallExpression(parent) && t.isImport(parent.callee)) {
                 break
               }
 

@@ -1,5 +1,10 @@
 import type ReactNS from 'react'
 import * as React from 'react'
+import * as 中文分词 from './中文分词'
+
+中文分词()
+
+import('./中文分词')
 
 type N = ReactNS.ReactNode
 
