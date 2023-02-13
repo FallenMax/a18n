@@ -1,10 +1,14 @@
-# a18n
+# a18n - automated i18n solution
 
 [![npm package](https://img.shields.io/npm/v/a18n.svg)](https://www.npmjs.com/package/a18n) [![build](https://github.com/fallenmax/a18n/workflows/CI/badge.svg)](https://github.com/FallenMax/a18n/actions) [![Coverage](https://img.shields.io/codecov/c/github/fallenmax/a18n)](https://codecov.io/github/fallenmax/a18n)
 
 [English](https://github.com/FallenMax/a18n/blob/master/README.md) | [中文](https://github.com/FallenMax/a18n/blob/master/README_zh-cn.md)
 
-a18n is an automated internationalization solution for JavaScript/TypeScript/React. This library uses AST manipulation to wrap and extract text in JS/TS/JSX/TSX files, making it easy to add internationalization support to your project.
+`a18n` is a production-ready internationalization solution that aims for maximum automation and simplicity.
+
+It can **wrap** and **extract** texts in JavaScript/TypeScript code using AST manipulation, so you can effortlessly add i18n support to new or existing projects.
+
+With its ability to recognize texts and resources, it can **check** for untranslated texts in code and resources, prune unused resources, and automatically provide texts context both for extraction and translation.
 
 [![Screen Recoding](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif?raw=true)](https://github.com/FallenMax/a18n/blob/master/assets/screen-recording.gif)
 
@@ -14,18 +18,16 @@ a18n is an automated internationalization solution for JavaScript/TypeScript/Rea
   - **Wrap** texts with translation calls (`a18n wrap`). (English and CJK texts are currently supported)
   - **Extract** texts from translation calls (`a18n extract`)
   - **Check** for untranslated text in code and resources (`a18n check`)
-  - **Replace** untranslated text in code with translated ones (`a18n replace`)
-  - **Purge** remove translation calls and imports (`a18n purge`)
+  - **Replace** untranslated text with translations (`a18n replace`)
+  - **Purge** translation calls and imports (`a18n purge`)
   - Supports dynamic texts in ES6 Template Strings
   - Supports TypeScript
-  - Supports React, or any framework that uses JSX
-  - Provides context for texts with the `module` they belong to
-  - Ignores lines or files with annotation comments
-  - Preserves original code formatting while minimizing modifications to code as much as possible (although using [prettier](https://github.com/prettier/prettier) is still recommended)
+  - Supports React and any JSX framework
+  - Provides context for texts with the corresponding module
 - Runtime
-  - Translates static and dynamic texts using provided locale resources
-  - Small (~200 lines of code)
-  - Fast - dynamic texts are compiled into a template on the first run
+  - Translates both static and dynamic texts using provided locale resources
+  - Small - only ~200 lines of code
+  - Optimized for performance - dynamic texts are compiled into a template on the first run for maximum speed.
 
 ## Getting Started
 
