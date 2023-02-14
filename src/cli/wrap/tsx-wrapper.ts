@@ -210,59 +210,82 @@ export const wrapCode = (
         switch (node.type) {
           // '中文' => a18n('中文')
           case 'StringLiteral': {
-            if (needTranslate(node.value, text)) {
-              const parent = path.parent
+            if (!needTranslate(node.value, text)) {
+              break
+            }
 
-              // ignore: a18n(’中文’)
-              if (
-                t.isCallExpression(parent) &&
-                t.isIdentifier(parent.callee) &&
-                parent.callee.name === LIB_IDENTIFIER
-              ) {
-                markLibUsed()
-                break
-              }
+            const parent = path.parent
+            // ignore: a18n(’中文’)
+            if (
+              t.isCallExpression(parent) &&
+              t.isIdentifier(parent.callee) &&
+              parent.callee.name === LIB_IDENTIFIER
+            ) {
+              markLibUsed()
+              break
+            }
 
-              // ignore: import ... from './中文'
-              if (t.isImportDeclaration(parent)) {
-                break
-              }
+            // ignore: import ... from './中文'
+            if (t.isImportDeclaration(parent)) {
+              break
+            }
 
-              // ignore: import('./中文')
-              if (t.isCallExpression(parent) && t.isImport(parent.callee)) {
-                break
-              }
+            // ignore: import('./中文')
+            if (t.isCallExpression(parent) && t.isImport(parent.callee)) {
+              break
+            }
 
-              // <input placeholder="中文" /> => <input placeholder={a18n('中文') />
-              if (t.isJSXAttribute(parent)) {
-                if (checkOnly) {
-                  addStaticText(node, node.value)
-                } else {
-                  path.replaceWith(
-                    t.jsxExpressionContainer(
-                      t.callExpression(t.identifier(LIB_IDENTIFIER), [
-                        t.stringLiteral(removePrefix(node.value)),
-                      ]),
-                    ),
-                  )
-                }
-                markLibUsed()
-              } else if (
-                !(t.isProperty(parent) && parent.key === node) &&
-                !t.isTSLiteralType(parent) &&
-                !t.isTSEnumMember(parent)
-              ) {
-                if (checkOnly) {
-                  addStaticText(node, node.value)
-                } else {
-                  path.replaceWith(
+            // ignore: export * from './中文'
+            if (t.isExportAllDeclaration(parent)) {
+              break
+            }
+
+            // ignore: export { named } from './中文'
+            if (t.isExportNamedDeclaration(parent)) {
+              break
+            }
+
+            // ignore: export type s18 = 'YYYY年MM月DD日' | 'YYYY年MM月DD日 hh:mm'
+            if (t.isTSLiteralType(parent)) {
+              break
+            }
+            // ignore: export enum S19 { '一' = 1, }
+            if (t.isTSEnumMember(parent)) {
+              break
+            }
+
+            // ignore: const a = { 中文键: 123 }
+            if (t.isProperty(parent) && parent.key === node) {
+              break
+            }
+
+            // convert: <input placeholder="中文" /> => <input placeholder={a18n('中文') />
+            if (t.isJSXAttribute(parent)) {
+              if (checkOnly) {
+                addStaticText(node, node.value)
+              } else {
+                path.replaceWith(
+                  t.jsxExpressionContainer(
                     t.callExpression(t.identifier(LIB_IDENTIFIER), [
                       t.stringLiteral(removePrefix(node.value)),
                     ]),
-                  )
-                }
-                markLibUsed()
+                  ),
+                )
               }
+              markLibUsed()
+              break
+            }
+
+            // convert: "中文" => a18n("中文")
+            if (checkOnly) {
+              addStaticText(node, node.value)
+            } else {
+              path.replaceWith(
+                t.callExpression(t.identifier(LIB_IDENTIFIER), [
+                  t.stringLiteral(removePrefix(node.value)),
+                ]),
+              )
+              markLibUsed()
             }
             break
           }

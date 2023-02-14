@@ -2,10 +2,14 @@ import a18n from 'a18n'
 import type ReactNS from 'react'
 import * as React from 'react'
 import * as 中文分词 from './中文分词'
-
-中文分词()
+import 默认中文分词, { 中文导出, type 中文类型 } from './中文分词'
+默认中文分词(中文导出(中文分词())) as 中文类型
 
 import('./中文分词')
+
+export * from './中文分词' // export all
+export { 中文变量, type 中文类型 } from './中文分词' // export named
+export default a18n('中文-1')
 
 type N = ReactNS.ReactNode
 
@@ -95,4 +99,3 @@ ${a18n('世界-1')}-1`
 
 // export type syntax
 type SomeType = number
-export { type SomeType }

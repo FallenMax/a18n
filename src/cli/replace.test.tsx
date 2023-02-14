@@ -29,7 +29,7 @@ describe('replace', () => {
     )
     const sourceTexts = extractCode(source, 'FAKE/PATH.tsx')
     const keys = sourceTexts.map((t) => sourceTextToKey(t))
-    const values = keys.map((k) => k + '-1') // no special meaning of `-1`, just create a predicatable value for each key
+    const values = keys.map((k) => k + '-1') // no special meaning of `-1`, just create a predictable value for each key
     const resource = {} as LocaleResource
     keys.forEach((key, i) => {
       resource[key] = values[i]

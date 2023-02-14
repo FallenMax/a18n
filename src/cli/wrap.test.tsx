@@ -61,7 +61,7 @@ describe('wrap', () => {
     })
   })
   describe('add a18n() calls ', () => {
-    test('when text=cjk, wrap cjk texts', () => {
+    test('when text=cjk, wrap cjk texts, handles all syntaxes correctly', () => {
       const sourcePath = resolve(
         __dirname,
         '../../src/cli/__test__/wrap-input.mock.tsx',
@@ -121,7 +121,6 @@ describe('wrap', () => {
         expected,
       )
     })
-
     test('when text=capitalized, wrap capitalized texts', () => {
       const source = `
       const staticText = 'Hello World'
@@ -211,6 +210,7 @@ describe('wrap', () => {
     expect(keys).toEqual([
       '中文',
       '中文',
+      '中文',
       '中文2',
       '中文22',
       'eng 中间有中文 lish',
@@ -244,7 +244,7 @@ describe('wrap', () => {
     expect(keys).toEqual(['我喜欢%s生活', '这样子'])
   })
 
-  test('igore file containing `@a18n-ignore-file` ', () => {
+  test('ignore file containing `@a18n-ignore-file` ', () => {
     const source = `// @a18n-ignore-file
 
   const s = '中文'
